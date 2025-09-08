@@ -76,8 +76,8 @@
 
 // 电机ID ---------------------
 #define WHEEL_1_ID (2)
-#define WHEEL_2_ID (3)
-#define WHEEL_3_ID (4)
+#define WHEEL_2_ID (4)
+#define WHEEL_3_ID (3)
 #define WHEEL_4_ID (1)
 
 // 电机CAN ---------------------
@@ -280,8 +280,8 @@
 #define TRIGGER_SPEED_PID_MAX_IOUT (100.0f)
 
 // 拨弹轮电机PID角度环
-#define TRIGGER_ANGEL_PID_KP (200.0f)
-#define TRIGGER_ANGEL_PID_KI (0.05f)
+#define TRIGGER_ANGEL_PID_KP (110.0f)
+#define TRIGGER_ANGEL_PID_KI (0.1f)
 #define TRIGGER_ANGEL_PID_KD (0.05f)
 
 #define TRIGGER_ANGEL_PID_MAX_OUT (500.0f)

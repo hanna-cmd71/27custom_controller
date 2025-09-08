@@ -32,9 +32,9 @@
 // 选择机器人的各种类型
 #define __RC_TYPE RC_DT7         // 遥控器类型
 #define __DEBUG 0                  // 调试模式
-#define __TUNING 1                 // 调参模式
+#define __TUNING 1               // 调参模式
 #define __MUSIC_ON 0               // 开启音乐
-#define __TUNING_MODE TUNING_GIMBAL_YAW_BA  // 调参模式
+#define __TUNING_MODE TUNING_GIMBAL_YAW_UP  // 调参模式
 #define __HEAT_IMU 1  // 加热IMU(防止Debug时因断点导致pid失效产生过热，烧坏IMU)
 #define __CALI_DATA_FROM CALI_FROM_FLASH  // 校准数据来源(部分flash损坏的C板需要采用其他数据源)
 

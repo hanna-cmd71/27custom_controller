@@ -46,6 +46,7 @@ uint8_t BOARD_RX_DATA[DATA_NUM][DATA_LEN + 1];  //第一位存放数据长度信
 uint8_t usart1_buf[2][USART_RX_BUF_LENGHT];
 fifo_s_t usart1_fifo;
 uint8_t usart1_fifo_buf[USART1_FIFO_BUF_LENGTH];
+fp32 velocity;
 // unpack_data_t referee_unpack_obj;
 
 // 发送初始化
@@ -64,8 +65,31 @@ void SendRC(){
     // 获取-1到1的浮点数
     float ch0_float = GetDt7RcCh(0); // 范围: -1.0 ~ 1.0
     float ch1_float = GetDt7RcCh(1); // 范围: -1.0 ~ 1.0
-    
+    if (GetDt7Keyboard(KEY_SHIFT))
+    {
+        velocity=1.0f;
+    }
+    else
+    {
+        velocity=0.5f;
+    }
     // 使用128作为中值的映射算法
+    if(GetDt7Keyboard(KEY_W))
+    {
+    ch1_float=velocity;
+    }
+    else if (GetDt7Keyboard(KEY_S))
+    {
+    ch1_float=-velocity;  
+    }
+    if(GetDt7Keyboard(KEY_D))
+    {
+    ch0_float=velocity;
+    }
+    else if (GetDt7Keyboard(KEY_A))
+    {
+    ch0_float=-velocity; 
+    }
     // 公式: uint8_val = (float_val * 127) + 128
     int16_t temp_ch0 = (int16_t)(ch0_float * 127.0f + 128.0f);
     int16_t temp_ch1 = (int16_t)(ch1_float * 127.0f + 128.0f);
