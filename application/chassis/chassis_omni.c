@@ -162,16 +162,16 @@ void ChassisReference(void)
     {
         float sin_yaw = sin(chassis.yaw_delta);
         float cos_yaw = cos(chassis.yaw_delta);
-        chassis.reference.vx = (-chassis.reference_rc.vx * cos_yaw + chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
-        chassis.reference.vy = (-chassis.reference_rc.vx * sin_yaw - chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
+        chassis.reference.vx = (chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
+        chassis.reference.vy = (chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
         a1=cos_yaw;
         a2=sin_yaw;
-        chassis_wz = PID_calc(&chassis_pid.follow, chassis.yaw_delta, 0);
-        if(chassis_wz<1&&chassis_wz>-1)
-        {
-            chassis_wz=0;
-        }
-        chassis.reference.wz = 1.5f*chassis_wz;
+        // chassis_wz = PID_calc(&chassis_pid.follow, chassis.yaw_delta, 0);
+        // // if(chassis_wz<1&&chassis_wz>-1)
+        // // {
+        // //     chassis_wz=0;
+        // // }
+        // chassis.reference.wz = 0.1f*chassis_wz;
         break;
     }
     case CHASSIS_FOLLOW_GIMBAL_YAW:
@@ -187,8 +187,8 @@ void ChassisReference(void)
     {
         float sin_yaw = sin(chassis.yaw_delta);
         float cos_yaw = cos(chassis.yaw_delta);
-        chassis.reference.vx = -chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw;
-        chassis.reference.vy = -chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw;
+        chassis.reference.vx = (chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
+        chassis.reference.vy = (chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
         chassis.reference.wz = 1.0f * CHASSIS_RC_MAX_VELOCITY;
         break;
     }
@@ -212,10 +212,10 @@ void ChassisReference(void)
  */
 void ChassisConsole(void)
 {
-    chassis.set[3] = (sqrt(2) * (chassis.reference.vx - chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[0].reduction_ratio;
-    chassis.set[0] = (sqrt(2) * (chassis.reference.vx + chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[1].reduction_ratio;
-    chassis.set[1] = (sqrt(2) * (-chassis.reference.vx + chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[2].reduction_ratio;
-    chassis.set[2] = (sqrt(2) * (-chassis.reference.vx - chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[3].reduction_ratio;
+    chassis.set[0] = (sqrt(2) * (-chassis.reference.vx - chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[0].reduction_ratio;
+    chassis.set[1] = (sqrt(2) * (-chassis.reference.vx + chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[1].reduction_ratio;
+    chassis.set[2] = (sqrt(2) * (chassis.reference.vx + chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[2].reduction_ratio;
+    chassis.set[3] = (sqrt(2) * (chassis.reference.vx - chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[3].reduction_ratio;
 
     for (int i = 0; i < 4; ++i)
     {
@@ -236,6 +236,8 @@ void ChassisSendCmd(void)
     for (int i = 0; i < 4; ++i)
     {
         CanManagerAddMotor(chassis.wheel[i].id, chassis.wheel[i].can, chassis.wheel[i].set.curr);
+        //    CanManagerAddMotor(chassis.wheel[i].id, chassis.wheel[i].can, 2000);
+
     }
 }
 
@@ -249,9 +251,11 @@ void ChassisSendCmd(void)
  */
 void ChassisSetCaliData(const fp32 motor_middle[4])
 {
-    CanCmdDjiMotor(1, 0x700, 0, 0, 0, 0); // 发送ID为0x700的CAN包，设置3508电机进入快速设置ID模式
-    CanCmdDjiMotor(1, 0x700, 0, 0, 0, 0);
-    CanCmdDjiMotor(1, 0x700, 0, 0, 0, 0);
+    // 添加底盘电机到CAN管理器
+    CanCmdDjiMotor(chassis.wheel[0].can, 0x700, 0, 0, 0, 0);// 发送ID为0x700的CAN包，设置3508电机进入快速设置ID模式
+    CanCmdDjiMotor(chassis.wheel[1].can, 0x700, 0, 0, 0, 0);
+    CanCmdDjiMotor(chassis.wheel[2].can, 0x700, 0, 0, 0, 0);
+    CanCmdDjiMotor(chassis.wheel[3].can, 0x700, 0, 0, 0, 0);
 }
 
 /**

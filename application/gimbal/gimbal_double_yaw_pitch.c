@@ -685,16 +685,16 @@ void GimbalConsole(void)
             {
                 gimbal_direct.reference.yaw+=3.1415f;
             }
-        gimbal_direct.yaw_up.set.vel = yaw_up_zf*PID_calc(
+        gimbal_direct.yaw_up.set.vel = PID_calc(
                 &gimbal_direct_pid.yaw_up_angle,
                 0,
                 delta_yaw);
 
-        gimbal_direct.yaw_up.set.curr = PID_calc(&gimbal_direct_pid.yaw_up_velocity,
+        gimbal_direct.yaw_up.set.curr = yaw_up_zf*PID_calc(&gimbal_direct_pid.yaw_up_velocity,
                                               gimbal_direct.feedback_vel.yaw_up,
                                               gimbal_direct.yaw_up.set.vel);
         //大yaw电机控制
-        gimbal_direct.yaw_ba.set.vel = PID_calc(
+        gimbal_direct.yaw_ba.set.vel = yaw_ba_zf*PID_calc(
             &gimbal_direct_pid.yaw_ba_angle, gimbal_direct.feedback_pos.yaw_up, yaw_up_mid);
             // if( (gimbal_direct.yaw_ba.set.vel < 3.0f) && (gimbal_direct.yaw_ba.set.vel > -3.0f) )
             //  {
@@ -703,8 +703,8 @@ void GimbalConsole(void)
              gimbal_direct.yaw_ba.set.curr = PID_calc(&gimbal_direct_pid.yaw_ba_velocity, 
                     gimbal_direct.feedback_vel.yaw_ba, 
                     gimbal_direct.yaw_ba.set.vel);
-      gimbal_direct.yaw_up.set.curr-=gimbal_direct.yaw_ba.set.vel*75.0f; 
-      loop_fp32_constrain(gimbal_direct.yaw_up.set.curr,-14500,14500);           
+    //   gimbal_direct.yaw_up.set.curr-=gimbal_direct.yaw_ba.set.vel*75.0f; 
+    //   loop_fp32_constrain(gimbal_direct.yaw_up.set.curr,-14500,14500);           
     }
 }
 
@@ -719,7 +719,7 @@ void GimbalSendCmd(void)
 {
     // 添加电机到CAN管理器
     CanManagerAddMotor(gimbal_direct.pitch.id + 4, GIMBAL_PITCH_CAN, gimbal_direct.pitch.set.curr);
-    CanManagerAddMotor(gimbal_direct.yaw_ba.id + 4, GIMBAL_YAW_BA_CAN, -gimbal_direct.yaw_ba.set.curr);
+    CanManagerAddMotor(gimbal_direct.yaw_ba.id + 4, GIMBAL_YAW_BA_CAN, gimbal_direct.yaw_ba.set.curr);
     CanManagerAddMotor(gimbal_direct.yaw_up.id + 4, GIMBAL_YAW_UP_CAN, -gimbal_direct.yaw_up.set.curr);
 }
 

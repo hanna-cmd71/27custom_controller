@@ -8,7 +8,7 @@
 #include "robot_typedef.h"
 
 
-#define BOARD_CAN 1
+
 #define BOARD_DATA_ID 1
 #define GIMBAL_YAW_LIMIT 1
 #define FRIC_MOTOR_R_DIRECTION 1
@@ -20,7 +20,7 @@
 #define SHOOT_MODE_CHANNEL 1  // 射击发射开关通道数据
 
 
-#define board_type 1   //0代表底盘板，1代表云台板
+#define board_type 0   //0代表底盘板，1代表云台板
 
 #if (board_type == 1)
 #define gimbal_CHASSIS_TYPE CHASSIS_NONE
@@ -28,6 +28,8 @@
 #define gimbal_GIMBAL_TYPE GIMBAL_YAW_PITCH_DIRECT 
 #define BOARD_CURRENT C_BOARD_OMNI_SENTINEIL_GIMBAL
 #define BOARD_OTHER C_BOARD_OMNI_SENTINEIL_CHASSIS
+#define GIMBAL_DIRECT_YAW_CAN ((uint8_t)2)
+#define BOARD_CAN 2
 #endif
 #if (board_type == 0)
 #define chassis_CHASSIS_TYPE CHASSIS_OMNI_WHEEL
@@ -35,6 +37,9 @@
 #define chassis_GIMBAL_TYPE GIMBAL_NONE 
 #define BOARD_CURRENT C_BOARD_OMNI_SENTINEIL_CHASSIS
 #define BOARD_OTHER C_BOARD_OMNI_SENTINEIL_GIMBAL
+#define GIMBAL_YAW_CAN ((uint8_t)1)
+#define BOARD_CAN 1
+#define yaw_mid_date 1
 #endif
 
 #define CHASSIS_TYPE gimbal_CHASSIS_TYPE                     // 选择底盘类型
@@ -81,7 +86,7 @@
 #define WHEEL_4_ID (1)
 
 // 电机CAN ---------------------
-#define WHEEL_CAN (1)
+#define WHEEL_CAN (2)
 #define WHEEL_1_CAN (WHEEL_CAN)
 #define WHEEL_2_CAN (WHEEL_CAN)
 #define WHEEL_3_CAN (WHEEL_CAN)
@@ -144,15 +149,14 @@
 // remote controller sensitivity ---------------------
 #define RC_TO_VECTOR_SCALE (1.2f)
 #define REMOTE_CONTROLLER_SENSITIVITY (-150000.0f)
-#define REMOTE_CONTROLLER_MAX_DEADLINE (10.0f)
-#define REMOTE_CONTROLLER_MIN_DEADLINE (-10.0f)
+#define REMOTE_CONTROLLER_MAX_DEADLINE (0.01f)
+#define REMOTE_CONTROLLER_MIN_DEADLINE (-0.01f)
 // motor parameters ---------------------
 // 电机id
 #define GIMBAL_DIRECT_YAW_ID ((uint8_t)2)
 #define GIMBAL_DIRECT_PITCH_ID ((uint8_t)1)
 
 // 电机can口
-#define GIMBAL_DIRECT_YAW_CAN ((uint8_t)2)
 #define GIMBAL_DIRECT_PITCH_CAN ((uint8_t)2)
 
 // 电机种类

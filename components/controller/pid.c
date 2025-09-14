@@ -18,7 +18,6 @@
 #include "pid.h"
 
 #include "main.h"
-
 #define LimitMax(input, max)       \
     {                              \
         if (input > max) {         \

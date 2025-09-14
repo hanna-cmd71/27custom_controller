@@ -380,8 +380,8 @@ void GimbalReference(void)
                                   REMOTE_CONTROLLER_MIN_DEADLINE,
                                   REMOTE_CONTROLLER_MAX_DEADLINE) /
                         REMOTE_CONTROLLER_SENSITIVITY_PITCH,
-                GIMBAL_LOWER_LIMIT_PITCH - GIMBAL_DIRECT_PITCH_MID + gimbal_direct.pitch_angle_zero_for_imu,
-                GIMBAL_UPPER_LIMIT_PITCH - GIMBAL_DIRECT_PITCH_MID + gimbal_direct.pitch_angle_zero_for_imu);
+                GIMBAL_LOWER_LIMIT_PITCH - GIMBAL_DIRECT_PITCH_MID,
+                GIMBAL_UPPER_LIMIT_PITCH - GIMBAL_DIRECT_PITCH_MID);
 
             // YAW轴控制 (摇杆CH2)
             if (GIMBAL_YAW_LIMIT == 0)
@@ -402,8 +402,8 @@ void GimbalReference(void)
                                       REMOTE_CONTROLLER_MIN_DEADLINE,
                                       REMOTE_CONTROLLER_MAX_DEADLINE) /
                             REMOTE_CONTROLLER_SENSITIVITY_YAW,
-                GIMBAL_LOWER_LIMIT_YAW - GIMBAL_DIRECT_YAW_MID + gimbal_direct.yaw_angle_zero_for_imu,
-                GIMBAL_UPPER_LIMIT_YAW - GIMBAL_DIRECT_YAW_MID + gimbal_direct.yaw_angle_zero_for_imu);
+                GIMBAL_LOWER_LIMIT_YAW - GIMBAL_DIRECT_YAW_MID ,
+                GIMBAL_UPPER_LIMIT_YAW - GIMBAL_DIRECT_YAW_MID );
             }
         }
     }

@@ -9,8 +9,8 @@
 
 //快速选择对应的板子
 // #define BOARD_CURRENT C_BOARD_DEFAULT
-// #define BOARD_CURRENT C_BOARD_DOWN
-#define BOARD_CURRENT C_BOARD_UP
+#define BOARD_CURRENT C_BOARD_DOWN
+// #define BOARD_CURRENT C_BOARD_UP
 
 // 快速设置双板的配置
 #if(BOARD_CURRENT == C_BOARD_DOWN)
@@ -58,10 +58,10 @@
 #define CHASSIS_STDID (0x200)
 
 // 电机ID ---------------------
-#define WHEEL_1_ID (3)
-#define WHEEL_2_ID (4)
-#define WHEEL_3_ID (2)
-#define WHEEL_4_ID (1)
+#define WHEEL_1_ID (1)
+#define WHEEL_2_ID (2)
+#define WHEEL_3_ID (3)
+#define WHEEL_4_ID (4)
 
 // 电机CAN ---------------------
 #define WHEEL_1_CAN (2)
@@ -78,8 +78,8 @@
 // 电机方向
 #define WHEEL_1_DIRECTION (1)
 #define WHEEL_2_DIRECTION (1)
-#define WHEEL_3_DIRECTION (-1)
-#define WHEEL_4_DIRECTION (-1)
+#define WHEEL_3_DIRECTION (1)
+#define WHEEL_4_DIRECTION (1)
 
 // 电机减速比
 #define WHEEL_1_RATIO (19)
@@ -95,7 +95,7 @@
 
 // PID parameters ---------------------
 // 驱动轮速度环PID参数
-#define KP_OMNI_VEL (150.0f)
+#define KP_OMNI_VEL (100.0f)
 #define KI_OMNI_VEL (0.0f)
 #define KD_OMNI_VEL (0.3f)
 #define MAX_IOUT_OMNI_VEL (0.0f)
@@ -128,7 +128,7 @@
 
 // remote controller sensitivity ---------------------
 #define RC_TO_VECTOR_SCALE (0.006f)
-#define REMOTE_CONTROLLER_SENSITIVITY_YAW (500.0f)   // 云台遥控器灵敏度
+#define REMOTE_CONTROLLER_SENSITIVITY_YAW (300.0f)   // 云台遥控器灵敏度
 #define REMOTE_CONTROLLER_SENSITIVITY_PITCH (300.0f) // 云台遥控器灵敏度
 #define REMOTE_CONTROLLER_MAX_DEADLINE (0.05f)
 #define REMOTE_CONTROLLER_MIN_DEADLINE (-0.05f)
@@ -150,6 +150,7 @@
 #define GIMBAL_DIRECT_YAW_UP_DIRECTION (1)
 #define GIMBAL_DIRECT_PITCH_DIRECTION  (-1)
 #define yaw_up_zf -1
+#define yaw_ba_zf -1
 
 // 减速比
 #define GIMBAL_DIRECT_YAW_BA_REDUCTION_RATIO (1)
@@ -179,30 +180,31 @@
 
 // PID parameters ---------------------
 // YAW BA ANGLE
-#define KP_GIMBAL_YAW_BA_ANGLE (200.0f)
-#define KI_GIMBAL_YAW_BA_ANGLE (0.05f)
-#define KD_GIMBAL_YAW_BA_ANGLE (0.0f)
+#define KP_GIMBAL_YAW_BA_ANGLE (10.0f)
+#define KI_GIMBAL_YAW_BA_ANGLE (0.008f)
+#define KD_GIMBAL_YAW_BA_ANGLE (30.0f)
 #define MAX_OUT_GIMBAL_YAW_BA_ANGLE  (40.0f)
-#define MAX_IOUT_GIMBAL_YAW_BA_ANGLE (0.1f)
+#define MAX_IOUT_GIMBAL_YAW_BA_ANGLE (1.1f)
+
 // VELOCITY:角速度
-#define KP_GIMBAL_YAW_BA_VELOCITY (150.0f)
+#define KP_GIMBAL_YAW_BA_VELOCITY (1150.0f)
 #define KI_GIMBAL_YAW_BA_VELOCITY (0.0f)
 #define KD_GIMBAL_YAW_BA_VELOCITY (0.0f)
 #define MAX_OUT_GIMBAL_YAW_BA_VELOCITY (10000.0f)
 #define MAX_IOUT_GIMBAL_YAW_BA_VELOCITY (0.0f)
 
 // YAW UP ANGLE
-#define KP_GIMBAL_YAW_UP_ANGLE (500.0f)
-#define KI_GIMBAL_YAW_UP_ANGLE (1.0f)
-#define KD_GIMBAL_YAW_UP_ANGLE (0.0f)
-#define MAX_OUT_GIMBAL_YAW_UP_ANGLE  (45.0f)
-#define MAX_IOUT_GIMBAL_YAW_UP_ANGLE (0.0f)
+#define KP_GIMBAL_YAW_UP_ANGLE (180.0f)
+#define KI_GIMBAL_YAW_UP_ANGLE (0.041f)
+#define KD_GIMBAL_YAW_UP_ANGLE (2183.0f)
+#define MAX_OUT_GIMBAL_YAW_UP_ANGLE  (25.0f)
+#define MAX_IOUT_GIMBAL_YAW_UP_ANGLE (24.0f)
 // VELOCITY:角速度
-#define KP_GIMBAL_YAW_UP_VELOCITY (150.0f)
-#define KI_GIMBAL_YAW_UP_VELOCITY (0.0f)
-#define KD_GIMBAL_YAW_UP_VELOCITY (0.0f)
-#define MAX_OUT_GIMBAL_YAW_UP_VELOCITY  (10000.0f)
-#define MAX_IOUT_GIMBAL_YAW_UP_VELOCITY (0.0f)
+#define KP_GIMBAL_YAW_UP_VELOCITY (1200.0f)
+#define KI_GIMBAL_YAW_UP_VELOCITY (1.9f)
+#define KD_GIMBAL_YAW_UP_VELOCITY (702.0f)
+#define MAX_OUT_GIMBAL_YAW_UP_VELOCITY  (8000.0f)
+#define MAX_IOUT_GIMBAL_YAW_UP_VELOCITY (1000.0f)
 
 // PITCH ANGLE
 #define KP_GIMBAL_PITCH_ANGLE (50.0f)
