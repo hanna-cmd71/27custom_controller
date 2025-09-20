@@ -9,8 +9,8 @@
 
 //快速选择对应的板子
 // #define BOARD_CURRENT C_BOARD_DEFAULT
-#define BOARD_CURRENT C_BOARD_DOWN
-// #define BOARD_CURRENT C_BOARD_UP
+// #define BOARD_CURRENT C_BOARD_DOWN
+#define BOARD_CURRENT C_BOARD_UP
 
 // 快速设置双板的配置
 #if(BOARD_CURRENT == C_BOARD_DOWN)
@@ -113,7 +113,7 @@
 #define CHASSIS_RC_DEADLINE (5.0f)      // 摇杆死区
 #define CHASSIS_RC_MAX_RANGE (660.0f)   // 遥控器最大量程
 #define CHASSIS_RC_MAX_SPEED (1.0f)     // 最大速度(m/s)
-#define CHASSIS_RC_MAX_VELOCITY (5.0f)  // 最大角速度(rad/s) 仅用于无云台模式
+#define CHASSIS_RC_MAX_VELOCITY (10.0f)  // 最大角速度(rad/s) 仅用于无云台模式
 
 /*-------------------- Gimbal --------------------*/
 // 云台电流发送参数

@@ -703,6 +703,11 @@ void GimbalConsole(void)
              gimbal_direct.yaw_ba.set.curr = PID_calc(&gimbal_direct_pid.yaw_ba_velocity, 
                     gimbal_direct.feedback_vel.yaw_ba, 
                     gimbal_direct.yaw_ba.set.vel);
+        if(gimbal_direct.rc->rc.s[0]==1)
+        {
+           gimbal_direct.yaw_ba.set.curr -= 6000;
+           loop_fp32_constrain(gimbal_direct.yaw_ba.set.curr,-14500,14500);
+        }
     //   gimbal_direct.yaw_up.set.curr-=gimbal_direct.yaw_ba.set.vel*75.0f; 
     //   loop_fp32_constrain(gimbal_direct.yaw_up.set.curr,-14500,14500);           
     }

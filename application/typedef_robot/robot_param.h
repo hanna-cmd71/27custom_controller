@@ -23,7 +23,8 @@
 #include "struct_typedef.h"
 
 // 导入具体的机器人参数配置文件
-#include "robot_param_omni_sentry_two.h"
+// #include "robot_param_omni_sentry_two.h"
+#include "robot_param_water.h"
 // #include "robot_param_omni_sentry.h"
 // #include "robot_param_omni_mini.h"
 // #include "robot_param_mecannum_hero.h"

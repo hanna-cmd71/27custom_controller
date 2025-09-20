@@ -610,6 +610,9 @@
               },
               {
                 "path": "../application/shoot/shoot_fric_trigger.c"
+              },
+              {
+                "path": "../application/shoot/water_shot.c"
               }
             ],
             "folders": []
@@ -706,6 +709,9 @@
               },
               {
                 "path": "../application/typedef_robot/robot_param_fly.h"
+              },
+              {
+                "path": "../application/typedef_robot/robot_param_water.h"
               }
             ],
             "folders": []

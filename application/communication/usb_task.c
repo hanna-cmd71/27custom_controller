@@ -36,6 +36,7 @@
 #include "gimbal_virtual.h"
 #include "shoot.h"
 #include "shoot_fric_trigger.h"
+#include "water_shot.h"
 #include "chassis_omni.h"
 #include "chassis.h"
 

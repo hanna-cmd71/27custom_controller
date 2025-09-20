@@ -15,6 +15,7 @@
 // 可用的发射机构硬件类型
 #define SHOOT_NONE               0  // 无发射机构
 #define SHOOT_FRIC_TRIGGER       1  // 摩擦轮+拨弹盘发射机构
+#define SHOOT_FRIC_WATER       2  // 摩擦轮+拨弹盘发射机构
 
 // 可用机械臂硬件类型
 #define MECHANICAL_ARM_NONE              0  // 无机械臂

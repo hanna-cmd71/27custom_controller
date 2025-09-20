@@ -35,12 +35,6 @@ static Shoot_s SHOOT = {
     .heat = 0,
     .heat_limit = 0,
 };
-// fp32 delta;
-// int date;
-// fp32 all_error;               // 总误差
-// int all_Transmission_ratio_z; // 电机到拨弹盘的总传动比的整数
-// int COUNT;                    // 拨弹盘转半圈所需的电机圈数的整数
-// int COUNT_error;              // 误差
 
 static const PidGetVofa_t *pid_get_vofa;
 
@@ -133,12 +127,17 @@ void ShootSetMode(void)
   /*键鼠遥控器控制方式初版----------------------------*/
   if (switch_is_down(SHOOT.rc->rc.s[SHOOT_MODE_CHANNEL])) // 下档防止误触
   {
+
     SHOOT.state = FRIC_NOT_READY;
     SHOOT.mode = LOAD_STOP;
+
   }
 
   else if (switch_is_mid(SHOOT.rc->rc.s[SHOOT_MODE_CHANNEL]))
   {
+
+    
+
     // 测试使用
     SHOOT.state = FRIC_READY;
     SHOOT.mode = LAOD_BULLET;
@@ -257,6 +256,8 @@ void ShootSetMode(void)
     //   SHOOT.mode = LOAD_STOP;
     // }
   }
+
+
 
   // 防堵转
   if (SHOOT.mode == LOAD_BURSTFIRE)

@@ -16,6 +16,7 @@
   @endverbatim
   ****************************(C) COPYRIGHT 2024 Polarbear****************************
   */
+#include "gimbal_double_yaw_pitch.h"
 
 #include "communication.h"
 #include "data_exchange.h"
@@ -61,7 +62,6 @@ void SendRC(){
     if(BOARD_CURRENT != C_BOARD_UP || toe_is_error(DBUS_TOE)) return; // 如果当前板子不是上板，或者遥控器断开连接，则不发送遥控器数据
     
     uint8_t data_8[8];
-    
     // 获取-1到1的浮点数
     float ch0_float = GetDt7RcCh(0); // 范围: -1.0 ~ 1.0
     float ch1_float = GetDt7RcCh(1); // 范围: -1.0 ~ 1.0
@@ -93,13 +93,22 @@ void SendRC(){
     // 公式: uint8_val = (float_val * 127) + 128
     int16_t temp_ch0 = (int16_t)(ch0_float * 127.0f + 128.0f);
     int16_t temp_ch1 = (int16_t)(ch1_float * 127.0f + 128.0f);
+    uint8_t* byte_array_ptr;  // 用于指向拆分后的字节数组
+
+    // 将fp32的地址转换为uint8_t*（指向4字节数组的首地址）
+    // byte_array_ptr = (uint8_t*)&gimbal_direct.feedback_pos.yaw;
+        byte_array_ptr = 0;
+
+
+
     
+
     // 限制范围防止溢出
     data_8[0] = (uint8_t)(temp_ch0 < 0 ? 0 : (temp_ch0 > 255 ? 255 : temp_ch0));
     data_8[1] = (uint8_t)(temp_ch1 < 0 ? 0 : (temp_ch1 > 255 ? 255 : temp_ch1));
     
-    data_8[2] = 0;
-    data_8[3] = 0;
+    data_8[2] = byte_array_ptr[0];
+    data_8[3] = byte_array_ptr[0];
 
     switch (GetDt7RcSw(0))
     {
@@ -117,8 +126,8 @@ void SendRC(){
         break;
     }
 
-    data_8[5] = 1;
-    data_8[6] = 1;
+    data_8[5] = byte_array_ptr[0];
+    data_8[6] = byte_array_ptr[0];
     data_8[7] = 1;
 
     // 通过CAN总线发送遥控器的四个通道数据到指定板子
