@@ -514,6 +514,9 @@
               },
               {
                 "path": "../application/mechanical_arm/mechanical_arm_engineer.c"
+              },
+              {
+                "path": "../application/mechanical_arm/clio_mechanical_arm.c"
               }
             ],
             "folders": []
