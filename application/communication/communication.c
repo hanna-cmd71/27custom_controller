@@ -17,7 +17,7 @@
   ****************************(C) COPYRIGHT 2024 Polarbear****************************
   */
 #include "gimbal_double_yaw_pitch.h"
-
+#include "gimbal_yaw_pitch_direct.h"
 #include "communication.h"
 #include "data_exchange.h"
 #include "CRC8_CRC16.h"
@@ -42,7 +42,7 @@ static CanSendBuffer_t can_buffers[2][2] = {0}; // [CAN总线][标准ID类型]
 
 // receive data
 uint8_t BOARD_RX_DATA[DATA_NUM][DATA_LEN + 1];  //第一位存放数据长度信息
-
+int a3;
 // receive data buffer
 uint8_t usart1_buf[2][USART_RX_BUF_LENGHT];
 fifo_s_t usart1_fifo;
@@ -57,10 +57,10 @@ void SendInit(void)
     usart1_init(usart1_buf[0], usart1_buf[1], USART_RX_BUF_LENGHT);
 }
 
-void SendRC(){
-
+void SendRC()
+{
     if(BOARD_CURRENT != C_BOARD_UP || toe_is_error(DBUS_TOE)) return; // 如果当前板子不是上板，或者遥控器断开连接，则不发送遥控器数据
-    
+    a3++;
     uint8_t data_8[8];
     // 获取-1到1的浮点数
     float ch0_float = GetDt7RcCh(0); // 范围: -1.0 ~ 1.0

@@ -162,12 +162,12 @@ void ChassisReference(void)
         chassis.reference.vx = (chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
         chassis.reference.vy = (chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
         chassis_wz = PID_calc(&chassis_pid.follow, chassis.yaw_delta, 0);
-        // if(chassis_wz<1&&chassis_wz>-1)
-        // {
-        //     chassis_wz=0;
-        // }
-        // chassis.reference.wz = -2*chassis_wz;
-        chassis.reference.wz = 0;
+        if(chassis_wz<1&&chassis_wz>-1)
+        {
+            chassis_wz=0;
+        }
+        chassis.reference.wz = -2*chassis_wz;
+        // chassis.reference.wz = 0;
 
         break;
     }

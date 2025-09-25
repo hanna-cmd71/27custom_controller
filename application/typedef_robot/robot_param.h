@@ -24,16 +24,18 @@
 
 // 导入具体的机器人参数配置文件
 // #include "robot_param_omni_sentry_two.h"
-#include "robot_param_water.h"
+// #include "robot_param_water.h"
 // #include "robot_param_omni_sentry.h"
 // #include "robot_param_omni_mini.h"
+#include "robot_param_mini_pro.h"
+
 // #include "robot_param_mecannum_hero.h"
 // #include "robot_param_fly.h"
 
 // 选择机器人的各种类型
-#define __RC_TYPE RC_DT7         // 遥控器类型
+#define __RC_TYPE RC_DT7           // 遥控器类型                                        6
 #define __DEBUG 0                  // 调试模式
-#define __TUNING 0               // 调参模式
+#define __TUNING 0                 // 调参模式
 #define __MUSIC_ON 0               // 开启音乐
 #define __TUNING_MODE TUNING_NONE  // 调参模式
 #define __HEAT_IMU 1  // 加热IMU(防止Debug时因断点导致pid失效产生过热，烧坏IMU)

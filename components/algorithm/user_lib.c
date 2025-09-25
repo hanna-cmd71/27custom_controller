@@ -72,11 +72,15 @@ void first_order_filter_init(
   * @author         RM
   * @param[in]      一阶低通滤波结构体
   * @param[in]      间隔的时间，单位 s
+  * @param[in]      输入权重
+  * @param[in]      历史权重
   * @retval         返回空
   */
-void first_order_filter_cali(first_order_filter_type_t * first_order_filter_type, fp32 input)
+void first_order_filter_cali(first_order_filter_type_t * first_order_filter_type, fp32 input,int now_weight,int last_weight)
 {
     // clang-format off
+    first_order_filter_type->num[0]=now_weight;
+    first_order_filter_type->frame_period=last_weight;
     first_order_filter_type->input = input;
     first_order_filter_type->out =
         first_order_filter_type->num[0] / (first_order_filter_type->num[0] + first_order_filter_type->frame_period) * first_order_filter_type->out + first_order_filter_type->frame_period / (first_order_filter_type->num[0] + first_order_filter_type->frame_period) * first_order_filter_type->input;

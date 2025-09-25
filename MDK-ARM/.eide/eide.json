@@ -514,9 +514,6 @@
               },
               {
                 "path": "../application/mechanical_arm/mechanical_arm_engineer.c"
-              },
-              {
-                "path": "../application/mechanical_arm/clio_mechanical_arm.c"
               }
             ],
             "folders": []
@@ -715,6 +712,9 @@
               },
               {
                 "path": "../application/typedef_robot/robot_param_water.h"
+              },
+              {
+                "path": "../application/typedef_robot/robot_param_mini_pro.h"
               }
             ],
             "folders": []

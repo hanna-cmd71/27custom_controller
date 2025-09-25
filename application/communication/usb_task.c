@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include "gimbal_double_yaw_pitch.h"
 
 #include "CRC8_CRC16.h"
 #include "cmsis_os.h"
@@ -99,7 +100,6 @@ static LastSendTime_t LAST_SEND_TIME;
 /*******************************************************************************/
 /* Main Function                                                               */
 /*******************************************************************************/
-
 static void UsbSendData(void);
 static void UsbReceiveData(void);
 static void UsbInit(void);
@@ -116,7 +116,8 @@ static void UsbSendPidtoVofaData(void);
 /*******************************************************************************/
 
 static void ProcessVofaData(ReceiveDataVofa_s *vofa_data);
-
+//0返回pitch的值1返回yaw的值
+fp32 send_usb_date(int reference);
 /******************************************************************/
 /* Task                                                           */
 /******************************************************************/
@@ -399,8 +400,8 @@ static void UsbSendRobotStateInfoData(void)
 
     SEND_DATA_ROBOT_STATE_INFO.data.is_super_cap_work = 0;
     SEND_DATA_ROBOT_STATE_INFO.data.super_cap_voltage = 0;
-    SEND_DATA_ROBOT_STATE_INFO.data.encoder_up = 0;
-    SEND_DATA_ROBOT_STATE_INFO.data.encoder_down = 0;
+    // SEND_DATA_ROBOT_STATE_INFO.data.encoder_up = yaw_angle_get(1);
+    // SEND_DATA_ROBOT_STATE_INFO.data.encoder_down = yaw_angle_get(0);
 
     append_CRC16_check_sum((uint8_t *)&SEND_DATA_ROBOT_STATE_INFO, sizeof(SendDataRobotStateInfo_s));
     USB_Transmit((uint8_t *)&SEND_DATA_ROBOT_STATE_INFO, sizeof(SendDataRobotStateInfo_s));
@@ -538,6 +539,7 @@ static void UsbSendPidtoVofaData(void)
         SEND_DATA_PID_TUNING.data[9] = CHASSIS_PID->follow.Pout;
         SEND_DATA_PID_TUNING.data[10] = CHASSIS_PID->follow.Iout;
         SEND_DATA_PID_TUNING.data[11] = CHASSIS_PID->follow.Dout;
+
 #endif
 
     USB_Transmit((uint8_t *)&SEND_DATA_PID_TUNING, sizeof(SendDataPidTuning_s));
@@ -591,5 +593,17 @@ static void ProcessVofaData(ReceiveDataVofa_s *vofa_data)
         break;
     }
 }
-
+fp32 send_usb_date(int reference)
+{
+    if(reference==0)
+    {
+        return RECEIVE_ROBOT_CMD_DATA.data.pitch;
+    }
+    else if(reference==1)
+    {
+        return RECEIVE_ROBOT_CMD_DATA.data.yaw;
+    }
+    else
+    return 0;
+}
 /*------------------------------ End of File ------------------------------*/

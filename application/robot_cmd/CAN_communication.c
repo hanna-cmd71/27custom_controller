@@ -22,7 +22,7 @@ bit 8-11: data_type
 #include "CAN_communication.h"
 
 #include "bsp_can.h"
-
+int a1;
 static CanCtrlData_s CAN_CTRL_DATA = {
     .tx_header.IDE = CAN_ID_STD,
     .tx_header.RTR = CAN_RTR_DATA,
@@ -43,7 +43,7 @@ static CanCtrlData_s CAN_CTRL_DATA = {
 static void SendData(hcan_t * hcan, uint16_t data_id, uint16_t target_id, uint8_t * data)
 {
     CAN_CTRL_DATA.hcan = hcan;
-
+    a1++;
     CAN_CTRL_DATA.tx_header.StdId = BOARD_DATA_ANY + (data_id << 4) + target_id;
 
     for (size_t i = 0; i < 8; i++) {

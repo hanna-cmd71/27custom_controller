@@ -19,36 +19,37 @@
 #define TRIGGER_MOTOR_DIRECTION (1)
 #define SHOOT_MODE_CHANNEL 1  // 射击发射开关通道数据
 
+#define board_type 0   //底盘板
 
-#define board_type 0   //0代表底盘板，1代表云台板
+// #define board_type 1   //云台板
 
 #if (board_type == 1)
-#define gimbal_CHASSIS_TYPE CHASSIS_NONE
-#define gimbal_SHOOT_TYPE SHOOT_FRIC_TRIGGER 
-#define gimbal_GIMBAL_TYPE GIMBAL_YAW_PITCH_DIRECT 
-#define BOARD_CURRENT C_BOARD_OMNI_SENTINEIL_GIMBAL
+#define new_CHASSIS_TYPE CHASSIS_NONE
+#define new_SHOOT_TYPE SHOOT_FRIC_TRIGGER 
+#define new_GIMBAL_TYPE GIMBAL_YAW_PITCH_DIRECT 
+#define BOARD_CURRENT C_BOARD_UP
 #define BOARD_OTHER C_BOARD_OMNI_SENTINEIL_CHASSIS
 #define GIMBAL_DIRECT_YAW_CAN ((uint8_t)2)
 #define BOARD_CAN 2
 #endif
 #if (board_type == 0)
-#define chassis_CHASSIS_TYPE CHASSIS_OMNI_WHEEL
-#define chassis_SHOOT_TYPE SHOOT_NONE 
-#define chassis_GIMBAL_TYPE GIMBAL_NONE 
-#define BOARD_CURRENT C_BOARD_OMNI_SENTINEIL_CHASSIS
+#define new_CHASSIS_TYPE CHASSIS_OMNI_WHEEL
+#define new_SHOOT_TYPE SHOOT_NONE 
+#define new_GIMBAL_TYPE GIMBAL_NONE 
+#define BOARD_CURRENT C_BOARD_DOWN
 #define BOARD_OTHER C_BOARD_OMNI_SENTINEIL_GIMBAL
 #define GIMBAL_YAW_CAN ((uint8_t)1)
 #define BOARD_CAN 1
 #define yaw_mid_date 1
 #endif
 
-#define CHASSIS_TYPE gimbal_CHASSIS_TYPE                     // 选择底盘类型
+#define CHASSIS_TYPE new_CHASSIS_TYPE                     // 选择底盘类型
 // #define CHASSIS_TYPE CHASSIS_NONE                     // 选择底盘类型
 
 // #define GIMBAL_TYPE GIMBAL_YAW_PITCH_DIRECT           // 选择云台类型
-#define GIMBAL_TYPE gimbal_GIMBAL_TYPE           // 选择云台类型
+#define GIMBAL_TYPE new_GIMBAL_TYPE           // 选择云台类型
 
-#define SHOOT_TYPE gimbal_SHOOT_TYPE                        // 选择发射机构类型
+#define SHOOT_TYPE new_SHOOT_TYPE                        // 选择发射机构类型
 #define MECHANICAL_ARM_TYPE MECHANICAL_ARM_NONE       // 选择机械臂类型
 #define CUSTOM_CONTROLLER_TYPE CUSTOM_CONTROLLER_NONE // 选择自定义控制器类型
 

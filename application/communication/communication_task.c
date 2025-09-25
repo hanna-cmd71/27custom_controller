@@ -6,7 +6,7 @@
 #if INCLUDE_uxTaskGetStackHighWaterMark
 uint32_t communication_high_water;
 #endif
-
+int a2;
 // 任务相关时间
 #define COMMUNICATION_TASK_INIT_TIME 100
 #define COMMUNICATION_TASK_TIME_MS 2
@@ -17,7 +17,7 @@ void communication_task(void const * pvParameters)
     // 空闲一段时间
     vTaskDelay(COMMUNICATION_TASK_INIT_TIME);
     while (1) {
-
+a2++;
         // can发送
         SendRC();
 

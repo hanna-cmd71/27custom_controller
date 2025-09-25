@@ -5,10 +5,11 @@
 #include "remote_control.h"
 #include "struct_typedef.h"
 
+
 #define DEBUG_PACKAGE_NUM 12
 
 // usb通讯版本号
-#define PACKET_VERSION                  ((uint8_t)0x31)
+#define PACKET_VERSION                  ((uint8_t)0x33)
 // 发送数据包id
 #define ROBOT_STATE_DATA_INFO_SEND_ID   ((uint8_t)0x3B)
 // 接收数据包id
@@ -56,13 +57,16 @@ typedef struct
         float pitch;
         float yaw;
 
-        uint16_t encoder_up;
-        uint16_t encoder_down;
+        fp32 encoder_up;
+        fp32 encoder_down;
 
         float super_cap_voltage;
         bool is_super_cap_work;
+        bool is_auto_aim; 
+        
     } __packed__ data;
     uint16_t crc;
+
 } __packed__ SendDataRobotStateInfo_s;
 
 /*-------------------- Receive --------------------*/

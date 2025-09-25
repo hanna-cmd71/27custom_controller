@@ -9,9 +9,9 @@
 
 //快速选择对应的板子
 // #define BOARD_CURRENT C_BOARD_DEFAULT
-// #define BOARD_CURRENT C_BOARD_DOWN
+#define BOARD_CURRENT C_BOARD_DOWN
 // #define BOARD_CURRENT 666
-#define BOARD_CURRENT C_BOARD_UP
+// #define BOARD_CURRENT C_BOARD_UP
 // 快速设置双板的配置
 #if(BOARD_CURRENT == C_BOARD_DOWN)
 #define CHASSIS_TYPE CHASSIS_OMNI_WHEEL                 // 选择底盘类型
@@ -45,7 +45,7 @@
 /*-------------------- IMU --------------------*/
 // IMU安装角度参数 (单位：度) yaw -> pitvh -> roll
 #define IMU_ROLL_ANGLE (0.0f)     // 绕X轴旋转角度
-#define IMU_PITCH_ANGLE (0.0f)    // 绕Y轴旋转角度 
+#define IMU_PITCH_ANGLE (180.0f)    // 绕Y轴旋转角度 
 #define IMU_YAW_ANGLE (0.0f)      // 绕Z轴旋转角度
 
 /*-------------------- Chassis --------------------*/
@@ -169,8 +169,8 @@
 #define GIMBAL_DIRECT_PITCH_MODE  (0)
 
 // physical parameters ---------------------
-#define GIMBAL_UPPER_LIMIT_PITCH  (0.72f)
-#define GIMBAL_LOWER_LIMIT_PITCH  (-0.27f)
+#define GIMBAL_UPPER_LIMIT_PITCH  (1.2f)
+#define GIMBAL_LOWER_LIMIT_PITCH  (0.2f)
 #define GIMBAL_LOWER_LIMIT_YAW_BA (-M_PI)
 #define GIMBAL_UPPER_LIMIT_YAW_BA (M_PI)
 #define GIMBAL_LOWER_LIMIT_YAW_UP (1.2f)
@@ -186,27 +186,27 @@
 
 // PID parameters ---------------------
 // YAW BA ANGLE
-#define KP_GIMBAL_YAW_BA_ANGLE (10.0f)
+#define KP_GIMBAL_YAW_BA_ANGLE (11.0f)
 #define KI_GIMBAL_YAW_BA_ANGLE (0.008f)
 #define KD_GIMBAL_YAW_BA_ANGLE (30.0f)
-#define MAX_OUT_GIMBAL_YAW_BA_ANGLE  (40.0f)
-#define MAX_IOUT_GIMBAL_YAW_BA_ANGLE (1.1f)
+#define MAX_OUT_GIMBAL_YAW_BA_ANGLE  (50.0f)
+#define MAX_IOUT_GIMBAL_YAW_BA_ANGLE (0.0f)
 
 // VELOCITY:角速度
-#define KP_GIMBAL_YAW_BA_VELOCITY (1150.0f)
-#define KI_GIMBAL_YAW_BA_VELOCITY (0.0f)
+#define KP_GIMBAL_YAW_BA_VELOCITY (800.0f)
+#define KI_GIMBAL_YAW_BA_VELOCITY (2.0f)
 #define KD_GIMBAL_YAW_BA_VELOCITY (0.0f)
 #define MAX_OUT_GIMBAL_YAW_BA_VELOCITY (10000.0f)
-#define MAX_IOUT_GIMBAL_YAW_BA_VELOCITY (0.0f)
+#define MAX_IOUT_GIMBAL_YAW_BA_VELOCITY (1000.0f)
 
 // YAW UP ANGLE
-#define KP_GIMBAL_YAW_UP_ANGLE (180.0f)
+#define KP_GIMBAL_YAW_UP_ANGLE (80.0f)
 #define KI_GIMBAL_YAW_UP_ANGLE (0.041f)
 #define KD_GIMBAL_YAW_UP_ANGLE (2183.0f)
 #define MAX_OUT_GIMBAL_YAW_UP_ANGLE  (25.0f)
 #define MAX_IOUT_GIMBAL_YAW_UP_ANGLE (24.0f)
 // VELOCITY:角速度
-#define KP_GIMBAL_YAW_UP_VELOCITY (1200.0f)
+#define KP_GIMBAL_YAW_UP_VELOCITY (500.0f)
 #define KI_GIMBAL_YAW_UP_VELOCITY (1.9f)
 #define KD_GIMBAL_YAW_UP_VELOCITY (702.0f)
 #define MAX_OUT_GIMBAL_YAW_UP_VELOCITY  (8000.0f)
@@ -225,6 +225,11 @@
 #define MAX_IOUT_GIMBAL_PITCH_VELOCITY (2500.0f)
 #define MAX_OUT_GIMBAL_PITCH_VELOCITY  (9000.0f)
 
+#define KP_GIMBAL_YAW_USB (2.0f)
+#define KI_GIMBAL_YAW_USB (0.0001f)
+#define KD_GIMBAL_YAW_USB (0.004f)
+#define MAX_OUT_GIMBAL_YAW_USB  (0.1f)
+#define MAX_IOUT_GIMBAL_YAW_USB (0.01f)
 /*-------------------- Shoot --------------------*/
 // physical parameters ---------------------
 #define FRIC_RADIUS 0.03f                    // (m)摩擦轮半径

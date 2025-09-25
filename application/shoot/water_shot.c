@@ -6,7 +6,7 @@
 #include "task.h"
 #if (SHOOT_TYPE == SHOOT_FRIC_WATER)
 
-
+int aaaa1;
 static Shoot_s SHOOT = {
     .mode = LOAD_STOP,
     .state = FRIC_NOT_READY,
@@ -62,13 +62,27 @@ void ShootReference(void)
   {
     case LOAD_STOP:
       HAL_GPIO_WritePin(GPIOE,GPIO_PIN_9,GPIO_PIN_RESET);
+      aaaa1=0;
     break;
     case LAOD_BULLET:
+    if(aaaa1==0)
+    {
+        HAL_GPIO_WritePin(GPIOE,GPIO_PIN_9,GPIO_PIN_SET);
+      vTaskDelay(50);
+      HAL_GPIO_WritePin(GPIOE,GPIO_PIN_9,GPIO_PIN_RESET);
+      aaaa1=1;
+    }
     if(SHOOT.rc->mouse.press_l==1)
     {
       HAL_GPIO_WritePin(GPIOE,GPIO_PIN_9,GPIO_PIN_SET);
-      vTaskDelay(120);
+      vTaskDelay(50);
       HAL_GPIO_WritePin(GPIOE,GPIO_PIN_9,GPIO_PIN_RESET);
+            vTaskDelay(120);
+
+    }
+    else
+    {
+       HAL_GPIO_WritePin(GPIOE,GPIO_PIN_9,GPIO_PIN_RESET);
     }
     break;
     case LOAD_BURSTFIRE:

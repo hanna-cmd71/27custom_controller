@@ -213,7 +213,7 @@
 /*MOTOR paramters --------------------*/
 
 // 电机种类
-#define TRIGGER_MOTOR_TYPE ((MotorType_e)DJI_M3508)
+#define TRIGGER_MOTOR_TYPE ((MotorType_e)DM_4310)
 #define FRIC_MOTOR_TYPE ((MotorType_e)DJI_M3508)
 
 // 电机ID

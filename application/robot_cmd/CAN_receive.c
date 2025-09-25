@@ -33,7 +33,7 @@
 #include "user_lib.h"
 
 #define DATA_NUM 10
-
+int b1;
 // 接收数据
 static DjiMotorMeasure_t CAN1_DJI_MEASURE[11];
 static DjiMotorMeasure_t CAN2_DJI_MEASURE[11];
@@ -250,6 +250,7 @@ static void DecodeStdIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t
 
     if (target_id != BOARD_CURRENT) return;
     if (data_type == BOARD_DATA_ANY) {
+        b1++;
         BoardCommunicationFdbData(&BOARD_COMMUNICATION_MEASURE, rx_data);
         return;
     }

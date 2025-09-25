@@ -37,7 +37,9 @@
 #include "math.h"
 #include "macro_typedef.h"
 #include "supervisory_computer_cmd.h"
-
+//0获得大yaw的编码器;1获得小yaw的编码器
+fp32 yaw_angle_get(int yaw_id);
+fp32 AAA666();
 
 /**
  * @brief 云台模式
@@ -73,6 +75,9 @@ typedef struct
 
     pid_type_def pitch_angle;
     pid_type_def pitch_velocity;
+
+    pid_type_def usb_yaw;
+
     
 } Gimbal_PID_t;
 
