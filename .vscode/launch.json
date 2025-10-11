@@ -1,0 +1,62 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "无线DAP Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "E:\\rm\\8\\standard-robot-pro\\MDK-ARM\\build\\Keil\\StandardRobotPro.elf", 
+            // 含有调试信息的可执行文件的路径，可以是 keil 生成的 .axf 文件 
+            // 或者 ARM-GNU-toolchain 生成的 .elf 文件
+            "request": "launch", // 启动类型，常用launch
+            "type": "cortex-debug", // 调试器类型不可动
+            "runToEntryPoint": "main",
+            "servertype": "openocd", 
+            // gdb server类型，
+            // 常用为jlink，stlink，openocd等
+            /*
+            * OpenOCD 配置文件在安装目录的 scripts 目录下
+            * 其中：
+            * interface 目录里包含了所有受支持的 硬件调试器 对应的配置文件
+            * target 目录包含了所有受支持的 芯片系列 对应的配置文件
+            */
+            "configFiles": [    
+                "interface/cmsis-dap.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            }
+        },
+        {
+            "name": "STLink Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "E:\\rm\\8\\standard-robot-pro\\MDK-ARM\\build\\Keil\\StandardRobotPro.elf", 
+            // 含有调试信息的可执行文件的路径，可以是 keil 生成的 .axf 文件 
+            // 或者 ARM-GNU-toolchain 生成的 .elf 文件
+            "request": "launch", // 启动类型，常用launch
+            "type": "cortex-debug", // 调试器类型不可动
+            "runToEntryPoint": "main",
+            "servertype": "openocd", 
+            // gdb server类型，
+            // 常用为jlink，stlink，openocd等
+            /*
+            * OpenOCD 配置文件在安装目录的 scripts 目录下
+            * 其中：
+            * interface 目录里包含了所有受支持的 硬件调试器 对应的配置文件
+            * target 目录包含了所有受支持的 芯片系列 对应的配置文件
+            */
+            "configFiles": [    
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            }
+        }
+    ]
+}

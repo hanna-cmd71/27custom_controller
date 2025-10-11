@@ -9,9 +9,9 @@
 
 //快速选择对应的板子
 // #define BOARD_CURRENT C_BOARD_DEFAULT
-#define BOARD_CURRENT C_BOARD_DOWN
+// #define BOARD_CURRENT C_BOARD_DOWN
 // #define BOARD_CURRENT 666
-// #define BOARD_CURRENT C_BOARD_UP
+#define BOARD_CURRENT C_BOARD_UP
 // 快速设置双板的配置
 #if(BOARD_CURRENT == C_BOARD_DOWN)
 #define CHASSIS_TYPE CHASSIS_OMNI_WHEEL                 // 选择底盘类型

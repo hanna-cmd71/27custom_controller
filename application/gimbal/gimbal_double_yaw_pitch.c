@@ -322,6 +322,9 @@ void GimbalInit(void)
     const static fp32 gimbal_pitch_angle[3] = {KP_GIMBAL_PITCH_ANGLE, KI_GIMBAL_PITCH_ANGLE, KD_GIMBAL_PITCH_ANGLE};
     const static fp32 gimbal_pitch_velocity[3] = {KP_GIMBAL_PITCH_VELOCITY, KI_GIMBAL_PITCH_VELOCITY, KD_GIMBAL_PITCH_VELOCITY};
 
+    PID_init(&gimbal_direct_pid.yaw_ba_new_angle, PID_POSITION, gimbal_yaw_ba_new_angle, MAX_OUT_GIMBAL_YAW_BA_ANGLE, 20);
+    PID_init(&gimbal_direct_pid.yaw_ba_new_velocity, PID_POSITION, gimbal_yaw_ba_new_velocity, MAX_OUT_GIMBAL_YAW_BA_VELOCITY, 2000);
+
     PID_init(&gimbal_direct_pid.yaw_ba_angle, PID_POSITION, gimbal_yaw_ba_angle, MAX_OUT_GIMBAL_YAW_BA_ANGLE, MAX_IOUT_GIMBAL_YAW_BA_ANGLE);
     PID_init(&gimbal_direct_pid.yaw_ba_velocity, PID_POSITION, gimbal_yaw_ba_velocity, MAX_OUT_GIMBAL_YAW_BA_VELOCITY, MAX_IOUT_GIMBAL_YAW_BA_VELOCITY);
 
@@ -393,11 +396,17 @@ void GimbalSetMode(void)
         gimbal_direct.mode = GIMBAL_ABSOLUTE_ANGLE;
     }
 
-    // 优先级6: 自瞄模式 (上档位)
+  // 优先级6: 自瞄模式 (上档位)
     else if (switch_is_up(gimbal_direct.rc->rc.s[0]))
     {
-        gimbal_direct.mode = GIMBAL_AUTO_AIM;
+        gimbal_direct.mode = GIMBAL_ABSOLUTE_ANGLE;
     }
+
+    // // 优先级6: 自瞄模式 (上档位)
+    // else if (switch_is_up(gimbal_direct.rc->rc.s[0]))
+    // {
+    //     gimbal_direct.mode = GIMBAL_AUTO_AIM;
+    // }
 }
 /*-------------------- Observe --------------------*/
 
@@ -722,10 +731,20 @@ void GimbalConsole(void)
             {
                 gimbal_direct.reference.yaw+=3.1415f;
             }
+           if (switch_is_up(gimbal_direct.rc->rc.s[0]))
+            {
+                 gimbal_direct.yaw_up.set.vel = PID_calc(
+                &gimbal_direct_pid.yaw_up_angle,
+                0,
+                delta_yaw);
+            }
+            else 
+            {
         gimbal_direct.yaw_up.set.vel = -gimbal_direct.feedback_vel.yaw_ba*4.5f+PID_calc(
                 &gimbal_direct_pid.yaw_up_angle,
                 0,
                 delta_yaw);
+        }
         gimbal_direct.yaw_up.set.curr = yaw_up_zf*PID_calc(&gimbal_direct_pid.yaw_up_velocity,
                                               gimbal_direct.feedback_vel.yaw_up,
                                               gimbal_direct.yaw_up.set.vel);
@@ -739,11 +758,11 @@ void GimbalConsole(void)
              gimbal_direct.yaw_ba.set.curr = PID_calc(&gimbal_direct_pid.yaw_ba_velocity, 
              gimbal_direct.feedback_vel.yaw_ba, 
              gimbal_direct.yaw_ba.set.vel);
-        // if(gimbal_direct.rc->rc.s[0]==1) 
-        // {
-        //    gimbal_direct.yaw_ba.set.curr -= 6000;
-        //    loop_fp32_constrain(gimbal_direct.yaw_ba.set.curr,-14500,14500);
-        // }
+        if(gimbal_direct.rc->rc.s[0]==1) 
+        {
+           gimbal_direct.yaw_ba.set.curr -= 12000;
+           loop_fp32_constrain(gimbal_direct.yaw_ba.set.curr,-14500,14500);
+        }
     //   gimbal_direct.yaw_up.set.curr+=gimbal_direct.feedback_vel.yaw_ba*40.0f; 
 
     }
