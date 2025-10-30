@@ -400,9 +400,10 @@ static void UsbSendRobotStateInfoData(void)
 
     SEND_DATA_ROBOT_STATE_INFO.data.is_super_cap_work = 0;
     SEND_DATA_ROBOT_STATE_INFO.data.super_cap_voltage = 0;
+    #if(BOARD_CURRENT==C_BOARD_UP)
     // SEND_DATA_ROBOT_STATE_INFO.data.encoder_up = yaw_angle_get(1);
     // SEND_DATA_ROBOT_STATE_INFO.data.encoder_down = yaw_angle_get(0);
-
+#endif
     append_CRC16_check_sum((uint8_t *)&SEND_DATA_ROBOT_STATE_INFO, sizeof(SendDataRobotStateInfo_s));
     USB_Transmit((uint8_t *)&SEND_DATA_ROBOT_STATE_INFO, sizeof(SendDataRobotStateInfo_s));
 }
@@ -539,7 +540,9 @@ static void UsbSendPidtoVofaData(void)
         SEND_DATA_PID_TUNING.data[9] = CHASSIS_PID->follow.Pout;
         SEND_DATA_PID_TUNING.data[10] = CHASSIS_PID->follow.Iout;
         SEND_DATA_PID_TUNING.data[11] = CHASSIS_PID->follow.Dout;
-
+#elif(__TUNING_MODE == 666)     
+        SEND_DATA_PID_TUNING.data[0] = yaw_angle_get(0);
+        SEND_DATA_PID_TUNING.data[1] = yaw_angle_get(1);
 #endif
 
     USB_Transmit((uint8_t *)&SEND_DATA_PID_TUNING, sizeof(SendDataPidTuning_s));

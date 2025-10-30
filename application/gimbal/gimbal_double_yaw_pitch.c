@@ -32,23 +32,35 @@
  Gimbal_s gimbal_direct;
 static Gimbal_PID_t gimbal_direct_pid;
 const PidGetVofa_t *pid_get_vofa;
-fp32 last_pitch;
-#define ROBO_INIT_TIME 10 // (秒)云台初始化时间
+first_order_filter_type_t yaw_up_out;
+first_order_filter_type_t yaw_up_input;
+first_order_filter_type_t yaw_ba_out;
+first_order_filter_type_t pitch_out;
+first_order_filter_type_t gilt_yaw_ba_input;
+fp32 yaw_up_ba;
+fp32 aim_data;
+fp32 a2;
+
+#define ROBO_INIT_TIME 5 // (秒)云台初始化时间
 /*--------------------------------Internal functions---------------------------------------*/
 /**以下函数均不会被外部调用，请注意！**/
 
 /*----------------angle_solution--------------------*/
-//0获得大yaw的编码器1获得小yaw的编码器
-fp32 yaw_angle_get(int yaw_id);
-//小yaw的一阶低通滤波
-first_order_filter_type_t yaw_up_set_out;
-//大yaw的一阶低通滤波
-first_order_filter_type_t yaw_ba_set_out;
-//大yaw的输入一阶低通滤波
-first_order_filter_type_t yaw_ba_set_in;
-
-
-
+fp32 yaw_angle_get(int yaw_id)
+{
+    if (yaw_id == 0)
+    {
+        return gimbal_direct.yaw_ba.set.vel;
+    }
+    // else if (yaw_id == 1)
+    // {
+    //     return imu_error;
+    // }
+    // else
+    // {
+        return 0.0f;
+    // }
+}
 
 /**
  * @brief          解算imu和电机角度的差值（用于更新云台的限位范围）,确认新的电机中值对应的imu值
@@ -322,9 +334,6 @@ void GimbalInit(void)
     const static fp32 gimbal_pitch_angle[3] = {KP_GIMBAL_PITCH_ANGLE, KI_GIMBAL_PITCH_ANGLE, KD_GIMBAL_PITCH_ANGLE};
     const static fp32 gimbal_pitch_velocity[3] = {KP_GIMBAL_PITCH_VELOCITY, KI_GIMBAL_PITCH_VELOCITY, KD_GIMBAL_PITCH_VELOCITY};
 
-    PID_init(&gimbal_direct_pid.yaw_ba_new_angle, PID_POSITION, gimbal_yaw_ba_new_angle, MAX_OUT_GIMBAL_YAW_BA_ANGLE, 20);
-    PID_init(&gimbal_direct_pid.yaw_ba_new_velocity, PID_POSITION, gimbal_yaw_ba_new_velocity, MAX_OUT_GIMBAL_YAW_BA_VELOCITY, 2000);
-
     PID_init(&gimbal_direct_pid.yaw_ba_angle, PID_POSITION, gimbal_yaw_ba_angle, MAX_OUT_GIMBAL_YAW_BA_ANGLE, MAX_IOUT_GIMBAL_YAW_BA_ANGLE);
     PID_init(&gimbal_direct_pid.yaw_ba_velocity, PID_POSITION, gimbal_yaw_ba_velocity, MAX_OUT_GIMBAL_YAW_BA_VELOCITY, MAX_IOUT_GIMBAL_YAW_BA_VELOCITY);
 
@@ -333,6 +342,7 @@ void GimbalInit(void)
 
     PID_init(&gimbal_direct_pid.pitch_angle, PID_POSITION, gimbal_pitch_angle, MAX_OUT_GIMBAL_PITCH_ANGLE, MAX_IOUT_GIMBAL_PITCH_ANGLE);
     PID_init(&gimbal_direct_pid.pitch_velocity, PID_POSITION, gimbal_pitch_velocity, MAX_OUT_GIMBAL_PITCH_VELOCITY, MAX_IOUT_GIMBAL_PITCH_VELOCITY);
+    
 
     // step4 初始化电机
     MotorInit(&gimbal_direct.yaw_ba, GIMBAL_DIRECT_YAW_BA_ID, GIMBAL_YAW_BA_CAN, GIMBAL_DIRECT_YAW_BA_MOTOR_TYPE, GIMBAL_DIRECT_YAW_BA_DIRECTION, GIMBAL_DIRECT_YAW_BA_REDUCTION_RATIO, GIMBAL_DIRECT_YAW_BA_MODE);
@@ -393,20 +403,23 @@ void GimbalSetMode(void)
     // 优先级5: 手动控制 (中档位)
     else if (switch_is_mid(gimbal_direct.rc->rc.s[0]))
     {
+        if(gimbal_direct.rc->mouse.press_r==1)
+        {
+        gimbal_direct.mode = GIMBAL_AUTO_AIM;
+        }
+        else
+        {
         gimbal_direct.mode = GIMBAL_ABSOLUTE_ANGLE;
+        }
     }
 
-  // 优先级6: 自瞄模式 (上档位)
+    // 优先级6: 自瞄模式 (上档位)
     else if (switch_is_up(gimbal_direct.rc->rc.s[0]))
     {
+        
         gimbal_direct.mode = GIMBAL_ABSOLUTE_ANGLE;
+        
     }
-
-    // // 优先级6: 自瞄模式 (上档位)
-    // else if (switch_is_up(gimbal_direct.rc->rc.s[0]))
-    // {
-    //     gimbal_direct.mode = GIMBAL_AUTO_AIM;
-    // }
 }
 /*-------------------- Observe --------------------*/
 
@@ -527,6 +540,7 @@ void GimbalObserver(void)
     default:
         break;
     }
+
 }
 
 /*-------------------- Reference --------------------*/
@@ -575,6 +589,8 @@ void GimbalReference(void)
         }
         else
         {
+
+
             // PITCH轴控制 (摇杆CH3)
             gimbal_direct.reference.pitch = fp32_constrain(
                 gimbal_direct.reference.pitch + 
@@ -587,10 +603,15 @@ void GimbalReference(void)
                 GIMBAL_UPPER_LIMIT_PITCH - GIMBAL_DIRECT_PITCH_MID );
             
             // YAW轴控制 (摇杆CH2) - 添加双yaw协调控制
-            float yaw_input = (fp32_deadline(GetDt7RcCh(2), 
+            float yaw_input;
+            // if(gimbal_direct.yaw_up.fdb.pos>-1.07f&&gimbal_direct.yaw_up.fdb.pos<0.54f)
+            // { 
+                yaw_input = (fp32_deadline(GetDt7RcCh(2), 
                                           REMOTE_CONTROLLER_MIN_DEADLINE, 
                                           REMOTE_CONTROLLER_MAX_DEADLINE)+GetDt7MouseSpeed(0)/10) / REMOTE_CONTROLLER_SENSITIVITY_YAW;
-            
+                                                          a2=yaw_input;
+
+            // }
             //---------------------PID调试使用-----------------
 
             // gimbal_direct.reference.yaw_up = fp32_constrain(
@@ -617,51 +638,72 @@ void GimbalReference(void)
 
                                         
             //计算总的yaw期望变化量
+             
+                // if (gimbal_direct.feedback_pos.yaw_up<2.08f&&yaw_input<0)
+                // {
+                //     yaw_input=0;
+                // }
+                // if (gimbal_direct.feedback_pos.yaw_up>-2.5f&&yaw_input>0)
+                // {
+                //     yaw_input=0;
+                // }
             gimbal_direct.reference.yaw = loop_fp32_constrain(
-                gimbal_direct.reference.yaw - yaw_input, -M_PI, M_PI);
+            gimbal_direct.reference.yaw - yaw_input, -M_PI, M_PI);
+            gimbal_direct.yaw_ba_input=(float)(gimbal_direct.feedback_pos.yaw_up - (float)yaw_up_mid);
+            if(gimbal_direct.yaw_ba_input<0.02f&&gimbal_direct.yaw_ba_input>-0.02f)
+            {
+                gimbal_direct.yaw_ba_mode=deadline;
+            }
+            else if (gimbal_direct.yaw_ba_input>0.2f||gimbal_direct.yaw_ba_input<-0.2f)
+            {
+                gimbal_direct.yaw_ba_mode=follow1;
+            }
+
+            if(gimbal_direct.yaw_ba_mode==follow1&&gimbal_direct.reference.yaw_ba-gimbal_direct.feedback_pos.yaw_ba<0.1f&&gimbal_direct.reference.yaw_ba-gimbal_direct.feedback_pos.yaw_ba>-0.1f)
+            {
+            first_order_filter_cali(&gilt_yaw_ba_input,gimbal_direct.yaw_ba_input/200,1,1);
+            gimbal_direct.yaw_ba_input=gilt_yaw_ba_input.out;
+            gimbal_direct.reference.yaw_ba = loop_fp32_constrain(
+            gimbal_direct.reference.yaw_ba + gimbal_direct.yaw_ba_input , -M_PI, M_PI);
+            }
+            if(switch_is_up(gimbal_direct.rc->rc.s[0]))
+            {
+              gimbal_direct.reference.yaw_ba-=0.02f;
+            }
             // //双yaw协调分配
             // GimbalDualYawAllocation(gimbal_direct.reference.yaw);
+            aim_data=0;
             
         }
     }
     // 保持当前位置
     else if (gimbal_direct.mode == GIMBAL_AUTO_AIM)
     {
-        gimbal_direct.reference.pitch = send_usb_date(0);
-        gimbal_direct.reference.yaw = send_usb_date(1);
-        // const static fp32 usb_yaw_jg[3] = {KP_GIMBAL_YAW_USB, KI_GIMBAL_YAW_USB, KD_GIMBAL_YAW_USB};
-        // PID_init(&gimbal_direct_pid.usb_yaw,PID_POSITION,usb_yaw_jg,MAX_OUT_GIMBAL_YAW_USB,MAX_IOUT_GIMBAL_YAW_USB);
-        // gimbal_direct.reference.yaw+=PID_calc(&gimbal_direct_pid.usb_yaw,0,send_usb_date(1));
-        // if(gimbal_direct.reference.pitch==0)
-        // {
-        //   gimbal_direct.reference.pitch=last_pitch;  
-        // }
-        // last_pitch=gimbal_direct.reference.pitch;
+    if(gimbal_direct.yaw_up.fdb.pos>-1.07f&&gimbal_direct.yaw_up.fdb.pos<0.54f)
+        {
+        aim_data = fp32_constrain(
+                aim_data + 
+                (fp32_deadline(GetDt7RcCh(2), 
+                                REMOTE_CONTROLLER_MIN_DEADLINE, 
+                                REMOTE_CONTROLLER_MAX_DEADLINE)+GetDt7MouseSpeed(0)/10) / REMOTE_CONTROLLER_SENSITIVITY_PITCH, 
+                -0.4f , 
+                0.4f );
+        }
+        gimbal_direct.reference.pitch = fp32_constrain(
+        gimbal_direct.reference.pitch + 
+                (fp32_deadline(GetDt7RcCh(3), 
+                                REMOTE_CONTROLLER_MIN_DEADLINE, 
+                                REMOTE_CONTROLLER_MAX_DEADLINE)+GetDt7MouseSpeed(1)/15) / REMOTE_CONTROLLER_SENSITIVITY_PITCH,
+                GIMBAL_LOWER_LIMIT_PITCH - GIMBAL_DIRECT_PITCH_MID , 
+                GIMBAL_UPPER_LIMIT_PITCH - GIMBAL_DIRECT_PITCH_MID );
+        gimbal_direct.reference.yaw = send_usb_date(1)+aim_data;
+        first_order_filter_cali(&yaw_up_input,gimbal_direct.reference.yaw,1,1);   
+    gimbal_direct.reference.yaw=yaw_up_input.out;
     }
 }
 
 /*-------------------- Console --------------------*/
-fp32 yaw_angle_get(int yaw_id)
-{
-  if(yaw_id==1)
-  {
-     return gimbal_direct.feedback_pos.yaw_up;
-  }
-  else if(yaw_id==0)
-  {
-    return gimbal_direct.feedback_pos.yaw_ba;
-  }
-  else
-  {
-    return 0;
-  }
-}
-fp32 AAA666()
-{
- 
-    return gimbal_direct.yaw_up.fdb.curr;
 
-}
 /**
  * @brief          计算控制量
  * @param[in]      none
@@ -682,12 +724,12 @@ void GimbalConsole(void)
             gimbal_direct.mode == ROBO_INIT)
     {
         // PITCH轴双环控制
-        gimbal_direct.pitch.set.vel = GIMBAL_DIRECT_PITCH_DIRECTION*PID_calc(
+        gimbal_direct.pitch.set.vel = PID_calc(
             &gimbal_direct_pid.pitch_angle,
             gimbal_direct.feedback_pos.pitch,    // 当前IMU角度
             gimbal_direct.reference.pitch);      // 目标IMU角度
         
-        gimbal_direct.pitch.set.curr = gimbal_direct.pitch.direction * 
+        gimbal_direct.pitch.set.curr = 
             PID_calc(&gimbal_direct_pid.pitch_velocity,
                     gimbal_direct.feedback_vel.pitch,  // 当前IMU角速度
                     gimbal_direct.pitch.set.vel);      // 目标角速度
@@ -731,47 +773,61 @@ void GimbalConsole(void)
             {
                 gimbal_direct.reference.yaw+=3.1415f;
             }
-           if (switch_is_up(gimbal_direct.rc->rc.s[0]))
+            if(switch_is_mid(gimbal_direct.rc->rc.s[0]))
             {
-                 gimbal_direct.yaw_up.set.vel = PID_calc(
-                &gimbal_direct_pid.yaw_up_angle,
-                0,
-                delta_yaw);
+            yaw_up_ba =-gimbal_direct.yaw_ba.fdb.vel*1.5f;
+            fp32_constrain(yaw_up_ba,-5,5);
             }
-            else 
+            else
             {
-        gimbal_direct.yaw_up.set.vel = -gimbal_direct.feedback_vel.yaw_ba*4.5f+PID_calc(
+             yaw_up_ba=0;
+            }
+            gimbal_direct.yaw_up.set.vel = yaw_up_ba
+            +PID_calc(
                 &gimbal_direct_pid.yaw_up_angle,
                 0,
                 delta_yaw);
-        }
+
         gimbal_direct.yaw_up.set.curr = yaw_up_zf*PID_calc(&gimbal_direct_pid.yaw_up_velocity,
                                               gimbal_direct.feedback_vel.yaw_up,
                                               gimbal_direct.yaw_up.set.vel);
         //大yaw电机控制
-        gimbal_direct.yaw_ba.set.vel = yaw_ba_zf*PID_calc(
-            &gimbal_direct_pid.yaw_ba_angle, gimbal_direct.feedback_pos.yaw_up, yaw_up_mid);
-            // if( (gimbal_direct.yaw_ba.set.vel < 10.0f) && (gimbal_direct.yaw_ba.set.vel > -10.0f) )
-            //  {
-            //     gimbal_direct.yaw_ba.set.vel = gimbal_direct.yaw_ba.set.vel/6; 
-            //  }
-             gimbal_direct.yaw_ba.set.curr = PID_calc(&gimbal_direct_pid.yaw_ba_velocity, 
-             gimbal_direct.feedback_vel.yaw_ba, 
-             gimbal_direct.yaw_ba.set.vel);
-        if(gimbal_direct.rc->rc.s[0]==1) 
-        {
-           gimbal_direct.yaw_ba.set.curr -= 12000;
-           loop_fp32_constrain(gimbal_direct.yaw_ba.set.curr,-14500,14500);
-        }
-    //   gimbal_direct.yaw_up.set.curr+=gimbal_direct.feedback_vel.yaw_ba*40.0f; 
+        
+           fp32 delta_yaw_ba = loop_fp32_constrain(
+            yaw_up_mid - gimbal_direct.feedback_pos.yaw_up, 
+            -M_PI, M_PI);   // 处理±180°跨越
 
+        // if(gimbal_direct.feedback_pos.yaw_up<yaw_up_mid+0.02f&&gimbal_direct.feedback_pos.yaw_up>yaw_up_mid-0.02f)
+        //     {
+        //         gimbal_direct.yaw_ba_mode=deadline;
+        //     }
+        //     else if (gimbal_direct.feedback_pos.yaw_up>yaw_up_mid+0.05f||gimbal_direct.feedback_pos.yaw_up<yaw_up_mid-0.05f)
+        //     {
+        //         gimbal_direct.yaw_ba_mode=follow1;
+        //     }
+
+        //     if(gimbal_direct.yaw_ba_mode==follow1)
+        //     {
+            gimbal_direct.yaw_ba.set.vel = -PID_calc(
+            &gimbal_direct_pid.yaw_ba_angle, 0, delta_yaw_ba);
+        //     }
+        //     else
+        //     {
+        //     gimbal_direct.yaw_ba.set.vel=0;
+        //     }
+                    gimbal_direct.yaw_ba.set.curr = PID_calc(&gimbal_direct_pid.yaw_ba_velocity, 
+                    gimbal_direct.feedback_vel.yaw_ba, 
+                    gimbal_direct.yaw_ba.set.vel);
+    // gimbal_direct.yaw_ba.set.curr-=gimbal_direct.yaw_up.set.curr/2;
+    loop_fp32_constrain(gimbal_direct.yaw_ba.set.curr,-14500,14500);  
+    first_order_filter_cali(&yaw_up_out,gimbal_direct.yaw_up.set.curr,1,1);
+         gimbal_direct.yaw_up.set.curr=yaw_up_out.out;
+    first_order_filter_cali(&yaw_ba_out,gimbal_direct.yaw_ba.set.curr,1,1);   
+         gimbal_direct.yaw_ba.set.curr=yaw_ba_out.out;
+    first_order_filter_cali(&pitch_out,gimbal_direct.yaw_ba.set.curr,1,1);   
+    gimbal_direct.yaw_ba.set.curr=pitch_out.out;
     }
-    //  first_order_filter_cali(&yaw_ba_set_out,gimbal_direct.yaw_ba.set.curr,,1);
-    //  gimbal_direct.yaw_ba.set.curr=yaw_ba_set_out.out;
-     first_order_filter_cali(&yaw_up_set_out,gimbal_direct.yaw_up.set.curr,1,1);
-     gimbal_direct.yaw_up.set.curr=yaw_up_set_out.out;
 }
-
 
 /*-------------------- Cmd --------------------*/
 
@@ -782,7 +838,7 @@ void GimbalConsole(void)
  */
 void GimbalSendCmd(void)
 {
-    // 添加电机到CAN管理器
+    // // 添加电机到CAN管理器
     CanManagerAddMotor(gimbal_direct.pitch.id + 4, GIMBAL_PITCH_CAN, gimbal_direct.pitch.set.curr);
     CanManagerAddMotor(gimbal_direct.yaw_ba.id + 4, GIMBAL_YAW_BA_CAN, gimbal_direct.yaw_ba.set.curr);
     CanManagerAddMotor(gimbal_direct.yaw_up.id + 4, GIMBAL_YAW_UP_CAN, -gimbal_direct.yaw_up.set.curr);

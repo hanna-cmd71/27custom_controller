@@ -142,7 +142,7 @@ void BoardCommunicationFdbData(ChassisReference_t *board_communication_measure, 
     // 公式: float_val = (uint8_val - 128) / 127.0
     board_communication_measure->vx = ((float)rx_data[0] - 128.0f) / 127.0f;
     board_communication_measure->vy = ((float)rx_data[1] - 128.0f) / 127.0f;
-    board_communication_measure->wz = 0;
+    board_communication_measure->wz = ((float)rx_data[2] - 128.0f) / 127.0f;;
     board_communication_measure->chassis_mode = rx_data[4];
 
         // 添加检测钩子 - 表示收到了板间通信数据
@@ -250,7 +250,6 @@ static void DecodeStdIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t
 
     if (target_id != BOARD_CURRENT) return;
     if (data_type == BOARD_DATA_ANY) {
-        b1++;
         BoardCommunicationFdbData(&BOARD_COMMUNICATION_MEASURE, rx_data);
         return;
     }

@@ -24,7 +24,7 @@
 #include "communication.h"
 
 #if (SHOOT_TYPE == SHOOT_FRIC_TRIGGER)
-
+int LAOD_BULLET_MOD;
 static Shoot_s SHOOT = {
     .mode = LOAD_STOP,
     .state = FRIC_NOT_READY,
@@ -578,12 +578,17 @@ void ShootReference(void)
   {
   case LOAD_STOP:
     SHOOT.REF.trigger_speed_ref = 0.0f;
+    LAOD_BULLET_MOD=0;
     break;
 
   case LAOD_BULLET:
-    if (TRIGGER_MOTOR_TYPE == DJI_M2006)
+    if (LAOD_BULLET_MOD==0)
     {
-     
+      SHOOT.REF.trigger_angel_ref=SHOOT.FDB.trigger_angel_fdb;
+      LAOD_BULLET_MOD=1;
+    }
+    if (TRIGGER_MOTOR_TYPE == DJI_M2006||TRIGGER_MOTOR_TYPE == DJI_M3508)
+    {
       if (SHOOT.move_flag == 0 && SHOOT.trigger_error.date==1)
       {
         SHOOT.REF.trigger_angel_ref = theta_format(SHOOT.REF.trigger_angel_ref - 2 * PI / BULLET_NUM);
@@ -607,25 +612,26 @@ void ShootReference(void)
         SHOOT.trigger_error.date=1;
       }
       }
+      
     }
-    else if (TRIGGER_MOTOR_TYPE == DJI_M3508)
-    {
-      if (SHOOT.move_flag == 0)
-      {
-        SHOOT.REF.trigger_angel_ref = theta_format(SHOOT.FDB.trigger_angel_fdb + 2 * PI / BULLET_NUM / TRIGGER_REDUCTION_RATIO);
-      }
+    // else if (TRIGGER_MOTOR_TYPE == DJI_M3508)
+    // {
+    //   if (SHOOT.move_flag == 0)
+    //   {
+    //     SHOOT.REF.trigger_angel_ref = theta_format(SHOOT.FDB.trigger_angel_fdb + 2 * PI / BULLET_NUM / TRIGGER_REDUCTION_RATIO);
+    //   }
 
-      // if (theta_format(SHOOT.REF.trigger_angel_ref - SHOOT.FDB.trigger_angel_fdb) > 0.01f)
-      if (theta_format(SHOOT.REF.trigger_angel_ref - SHOOT.FDB.trigger_angel_fdb) < -0.01f)
+    //   // if (theta_format(SHOOT.REF.trigger_angel_ref - SHOOT.FDB.trigger_angel_fdb) > 0.01f)
+    //   if (theta_format(SHOOT.REF.trigger_angel_ref - SHOOT.FDB.trigger_angel_fdb) < -0.01f)
 
-      {
-        SHOOT.move_flag = 1;
-      }
-      else
-      {
-        SHOOT.move_flag = 0;
-      }
-    }
+    //   {
+    //     SHOOT.move_flag = 1;
+    //   }
+    //   else
+    //   {
+    //     SHOOT.move_flag = 0;
+    //   }
+    // }
     else if (TRIGGER_MOTOR_TYPE == DM_4310)
     {
       if (SHOOT.move_flag == 0)
@@ -646,10 +652,12 @@ void ShootReference(void)
 
   case LOAD_BURSTFIRE:
     SHOOT.REF.trigger_speed_ref = TRIGGER_SPEED;
+    LAOD_BULLET_MOD=0;
     break;
 
   case LOAD_BLOCK:
     SHOOT.REF.trigger_speed_ref = REVERSE_SPEED;
+    LAOD_BULLET_MOD=0;
     break;
 
   default:
@@ -747,9 +755,11 @@ void ShootConsole(void)
  */
 void ShootSendCmd(void)
 {
-  //发射机构通信
+  // 发射机构通信
   CanManagerAddMotor(SHOOT.fric_motor[0].id, SHOOT.fric_motor[0].can, SHOOT.fric_motor[0].set.curr);
   CanManagerAddMotor(SHOOT.fric_motor[1].id, SHOOT.fric_motor[1].can, SHOOT.fric_motor[1].set.curr);
+  // CanManagerAddMotor(SHOOT.fric_motor[0].id, SHOOT.fric_motor[0].can, 15000);
+  // CanManagerAddMotor(SHOOT.fric_motor[1].id, SHOOT.fric_motor[1].can, 15000);
   CanManagerAddMotor(SHOOT.fric_motor[2].id, SHOOT.fric_motor[2].can, SHOOT.fric_motor[2].set.curr);
   
   //处理大疆电机

@@ -38,7 +38,12 @@
 #define TUNING_SHOOT_TRIGGER    9
 #define TUNING_CHASSIS_WHEEL    10
 #define TUNING_CHASSIS_FOLLOW   11
+#define aaa666   666
 
+
+//大yaw的运动模式
+#define deadline  0    //死区模式
+#define follow1    1    //跟随模式
 // 校准数据来源
 #define CALI_FROM_FLASH 1
 #define CALI_FROM_USB   2

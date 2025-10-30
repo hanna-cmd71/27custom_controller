@@ -39,10 +39,9 @@ static CanSendBuffer_t can_buffers[2][2] = {0}; // [CAN总线][标准ID类型]
 // can_buffers[0][1] = CAN1 0x1FF (ID 5-8) 
 // can_buffers[1][0] = CAN2 0x200 (ID 1-4)
 // can_buffers[1][1] = CAN2 0x1FF (ID 5-8)
-
+uint8_t a1[8];
 // receive data
 uint8_t BOARD_RX_DATA[DATA_NUM][DATA_LEN + 1];  //第一位存放数据长度信息
-int a3;
 // receive data buffer
 uint8_t usart1_buf[2][USART_RX_BUF_LENGHT];
 fifo_s_t usart1_fifo;
@@ -60,11 +59,11 @@ void SendInit(void)
 void SendRC()
 {
     if(BOARD_CURRENT != C_BOARD_UP || toe_is_error(DBUS_TOE)) return; // 如果当前板子不是上板，或者遥控器断开连接，则不发送遥控器数据
-    a3++;
     uint8_t data_8[8];
     // 获取-1到1的浮点数
     float ch0_float = GetDt7RcCh(0); // 范围: -1.0 ~ 1.0
     float ch1_float = GetDt7RcCh(1); // 范围: -1.0 ~ 1.0
+    float ch2_float;
     if (GetDt7Keyboard(KEY_SHIFT))
     {
         velocity=1.0f;
@@ -90,25 +89,35 @@ void SendRC()
     {
     ch0_float=-velocity; 
     }
+    if(GetDt7RcSw(0)==RC_SW_UP)
+    {
+            ch2_float=0;
+
+    // ch2_float = -GetDt7RcCh(2); // 范围: -1.0 ~ 1.0
+    }
+    else
+    {
+    ch2_float=0;
+    }
+    if(GetDt7Keyboard(KEY_Q))
+    {
+        ch2_float=1;
+    }
+    else if(GetDt7Keyboard(KEY_E))
+    {
+        ch2_float=-1;
+    }
     // 公式: uint8_val = (float_val * 127) + 128
     int16_t temp_ch0 = (int16_t)(ch0_float * 127.0f + 128.0f);
     int16_t temp_ch1 = (int16_t)(ch1_float * 127.0f + 128.0f);
-    uint8_t* byte_array_ptr;  // 用于指向拆分后的字节数组
-
-    // 将fp32的地址转换为uint8_t*（指向4字节数组的首地址）
-    // byte_array_ptr = (uint8_t*)&gimbal_direct.feedback_pos.yaw;
-        byte_array_ptr = 0;
-
-
-
-    
+    int16_t temp_ch2 = (int16_t)(ch2_float * 127.0f + 128.0f);
 
     // 限制范围防止溢出
     data_8[0] = (uint8_t)(temp_ch0 < 0 ? 0 : (temp_ch0 > 255 ? 255 : temp_ch0));
-    data_8[1] = (uint8_t)(temp_ch1 < 0 ? 0 : (temp_ch1 > 255 ? 255 : temp_ch1));
+    data_8[1] = (uint8_t)(temp_ch1 < 0 ? 0 : (temp_ch1 > 255 ? 255 : temp_ch1));    
+    data_8[2] = (uint8_t)(temp_ch2 < 0 ? 0 : (temp_ch2 > 255 ? 255 : temp_ch2));   ;
     
-    data_8[2] = byte_array_ptr[0];
-    data_8[3] = byte_array_ptr[0];
+    data_8[3] = 0;
 
     switch (GetDt7RcSw(0))
     {
@@ -126,9 +135,13 @@ void SendRC()
         break;
     }
 
-    data_8[5] = byte_array_ptr[0];
-    data_8[6] = byte_array_ptr[0];
+    data_8[5] = 0;
+    data_8[6] = 0;
     data_8[7] = 1;
+    a1[0]=data_8[0];
+    a1[1]=data_8[1];
+    a1[2]=data_8[2];
+    a1[4]=data_8[4];
 
     // 通过CAN总线发送遥控器的四个通道数据到指定板子
     CanSendDataToBoard(BOARD_CAN, BOARD_DATA_ID, BOARD_OTHER, data_8);
