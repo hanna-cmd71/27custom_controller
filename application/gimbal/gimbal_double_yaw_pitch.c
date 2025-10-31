@@ -27,7 +27,8 @@
 #include "communication.h"
 #include "usb_typdef.h"
 #include "usb_task.h"
-
+#include "usart.h"
+#include <string.h>
 #if (GIMBAL_TYPE == GIMBAL_DOUBLE_YAW_PITCH)
  Gimbal_s gimbal_direct;
 static Gimbal_PID_t gimbal_direct_pid;
@@ -40,6 +41,8 @@ first_order_filter_type_t gilt_yaw_ba_input;
 fp32 yaw_up_ba;
 fp32 aim_data;
 fp32 a2;
+char txData;
+char xz[]="xz";
 
 #define ROBO_INIT_TIME 5 // (秒)云台初始化时间
 /*--------------------------------Internal functions---------------------------------------*/
@@ -292,6 +295,10 @@ void GimbalPublish(void)
  */
 void GimbalInit(void)
 {
+
+
+
+    HAL_UART_Receive_IT(&huart6, (uint8_t*) txData, 2);
     // 获取PID参数指针
     pid_get_vofa = Subscribe(PID_GET_VOFA_NAME);
 
@@ -403,6 +410,7 @@ void GimbalSetMode(void)
     // 优先级5: 手动控制 (中档位)
     else if (switch_is_mid(gimbal_direct.rc->rc.s[0]))
     {
+       
         if(gimbal_direct.rc->mouse.press_r==1)
         {
         gimbal_direct.mode = GIMBAL_AUTO_AIM;
@@ -416,8 +424,8 @@ void GimbalSetMode(void)
     // 优先级6: 自瞄模式 (上档位)
     else if (switch_is_up(gimbal_direct.rc->rc.s[0]))
     {
-        
-        gimbal_direct.mode = GIMBAL_ABSOLUTE_ANGLE;
+      
+        gimbal_direct.mode = GIMBAL_AUTO_AIM;
         
     }
 }
@@ -582,6 +590,8 @@ void GimbalReference(void)
         // 模式切换时: 保持当前位置
         if (gimbal_direct.last_mode != GIMBAL_ABSOLUTE_ANGLE)
         {
+         strcpy(xz, "xz");
+        HAL_UART_Transmit(&huart6,(uint8_t*)xz, 2 ,100);
             gimbal_direct.reference.pitch = gimbal_direct.feedback_pos.pitch;
             gimbal_direct.reference.yaw_ba = gimbal_direct.feedback_pos.yaw_ba;
             gimbal_direct.reference.yaw_up = gimbal_direct.feedback_pos.yaw_up;
@@ -679,7 +689,17 @@ void GimbalReference(void)
     // 保持当前位置
     else if (gimbal_direct.mode == GIMBAL_AUTO_AIM)
     {
-    if(gimbal_direct.yaw_up.fdb.pos>-1.07f&&gimbal_direct.yaw_up.fdb.pos<0.54f)
+        if (gimbal_direct.last_mode != GIMBAL_AUTO_AIM)
+        {     strcpy(xz, "cc");
+        HAL_UART_Transmit(&huart6,(uint8_t*)xz, 2,100 );
+            gimbal_direct.reference.pitch = gimbal_direct.feedback_pos.pitch;
+            gimbal_direct.reference.yaw_ba = gimbal_direct.feedback_pos.yaw_ba;
+            gimbal_direct.reference.yaw_up = gimbal_direct.feedback_pos.yaw_up;
+            gimbal_direct.reference.yaw = gimbal_direct.feedback_pos.yaw;
+        }
+   else
+   {
+         if(gimbal_direct.yaw_up.fdb.pos>-1.07f&&gimbal_direct.yaw_up.fdb.pos<0.54f)
         {
         aim_data = fp32_constrain(
                 aim_data + 
@@ -699,6 +719,7 @@ void GimbalReference(void)
         gimbal_direct.reference.yaw = send_usb_date(1)+aim_data;
         first_order_filter_cali(&yaw_up_input,gimbal_direct.reference.yaw,1,1);   
     gimbal_direct.reference.yaw=yaw_up_input.out;
+        }
     }
 }
 
@@ -792,11 +813,14 @@ void GimbalConsole(void)
                                               gimbal_direct.feedback_vel.yaw_up,
                                               gimbal_direct.yaw_up.set.vel);
         //大yaw电机控制
-        
-           fp32 delta_yaw_ba = loop_fp32_constrain(
+                //跟随小yaw
+        //    fp32 delta_yaw_ba = loop_fp32_constrain(
+        //     yaw_up_mid - gimbal_direct.feedback_pos.yaw_up, 
+        //     -M_PI, M_PI);   // 处理±180°跨越
+                //跟随大yaw
+            fp32 delta_yaw_ba = loop_fp32_constrain(
             yaw_up_mid - gimbal_direct.feedback_pos.yaw_up, 
             -M_PI, M_PI);   // 处理±180°跨越
-
         // if(gimbal_direct.feedback_pos.yaw_up<yaw_up_mid+0.02f&&gimbal_direct.feedback_pos.yaw_up>yaw_up_mid-0.02f)
         //     {
         //         gimbal_direct.yaw_ba_mode=deadline;
@@ -808,7 +832,7 @@ void GimbalConsole(void)
 
         //     if(gimbal_direct.yaw_ba_mode==follow1)
         //     {
-            gimbal_direct.yaw_ba.set.vel = -PID_calc(
+            gimbal_direct.yaw_ba.set.vel = PID_calc(
             &gimbal_direct_pid.yaw_ba_angle, 0, delta_yaw_ba);
         //     }
         //     else
