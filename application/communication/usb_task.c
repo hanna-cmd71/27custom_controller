@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "gimbal_double_yaw_pitch.h"
+#include "chassis_foot.h"
 
 #include "CRC8_CRC16.h"
 #include "cmsis_os.h"
@@ -543,6 +544,30 @@ static void UsbSendPidtoVofaData(void)
 #elif(__TUNING_MODE == 666)     
         SEND_DATA_PID_TUNING.data[0] = yaw_angle_get(0);
         SEND_DATA_PID_TUNING.data[1] = yaw_angle_get(1);
+        SEND_DATA_PID_TUNING.data[2] = yaw_angle_get(2);
+        SEND_DATA_PID_TUNING.data[3] = yaw_angle_get(3);
+        SEND_DATA_PID_TUNING.data[4] = yaw_angle_get(4);
+        SEND_DATA_PID_TUNING.data[5] = yaw_angle_get(5);
+        SEND_DATA_PID_TUNING.data[6] = yaw_angle_get(6);
+        SEND_DATA_PID_TUNING.data[7] = yaw_angle_get(7);
+        SEND_DATA_PID_TUNING.data[8] = yaw_angle_get(8);
+        SEND_DATA_PID_TUNING.data[9] = yaw_angle_get(9);
+        SEND_DATA_PID_TUNING.data[10] = yaw_angle_get(10);
+        SEND_DATA_PID_TUNING.data[11] = yaw_angle_get(11);
+#elif(__TUNING_MODE == 12)     
+        SEND_DATA_PID_TUNING.data[0] =0xffffffff;
+        // SEND_DATA_PID_TUNING.data[1] = chassis_get(1);
+        // SEND_DATA_PID_TUNING.data[2] = chassis_get(2);
+        // SEND_DATA_PID_TUNING.data[3] = chassis_get(3);
+        // SEND_DATA_PID_TUNING.data[4] = chassis_get(4);
+        // SEND_DATA_PID_TUNING.data[5] = chassis_get(5);
+        // SEND_DATA_PID_TUNING.data[6] = chassis_get(6);
+        // SEND_DATA_PID_TUNING.data[7] = chassis_get(7);
+        // SEND_DATA_PID_TUNING.data[8] = chassis_get(8);
+        // SEND_DATA_PID_TUNING.data[9] = chassis_get(9);
+        // SEND_DATA_PID_TUNING.data[10] = chassis_get(10);
+        // SEND_DATA_PID_TUNING.data[11] = chassis_get(11);
+
 #endif
 
     USB_Transmit((uint8_t *)&SEND_DATA_PID_TUNING, sizeof(SendDataPidTuning_s));

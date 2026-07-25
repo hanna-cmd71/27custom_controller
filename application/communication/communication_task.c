@@ -8,7 +8,7 @@ uint32_t communication_high_water;
 #endif
 // 任务相关时间
 #define COMMUNICATION_TASK_INIT_TIME 100
-#define COMMUNICATION_TASK_TIME_MS 2
+#define COMMUNICATION_TASK_TIME_MS 50
 
 void communication_task(void const * pvParameters)
 {
@@ -23,7 +23,9 @@ void communication_task(void const * pvParameters)
         CanManagerSendAll();
 
         //uart1发送
-        DataPack("Hello World", 13, 0);
+        uart_updata();
+        // UartSendTxMessage(&huart1, (uint8_t *)(&ControlData), sizeof(ControlData), 100);
+
         UartSendTxMessage(&huart1, (uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA), 100);
         DataUnpack();
 

@@ -34,6 +34,7 @@
 
 #if INCLUDE_uxTaskGetStackHighWaterMark
 uint32_t gimbal_high_water;
+int a1;
 #endif
 
 __weak void GimbalPublish(void);
@@ -72,6 +73,7 @@ void gimbal_task(void const * pvParameters)
         GimbalConsole();
         // 发送控制量
         GimbalSendCmd();
+        a1++;
         // 系统延时
         vTaskDelay(GIMBAL_CONTROL_TIME);
 

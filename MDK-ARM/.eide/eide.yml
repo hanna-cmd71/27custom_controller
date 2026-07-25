@@ -150,6 +150,7 @@ virtualFolder:
         - path: ../components/controller/pid.c
         - path: ../components/controller/FF_pid.c
         - path: ../components/controller/npid.c
+        - path: ../application/gimbal/KalmanFilter.c
       folders: []
     - name: applications
       files: []
@@ -170,6 +171,7 @@ virtualFolder:
             - path: ../application/chassis/chassis_task.c
             - path: ../application/chassis/chassis_mecanum.c
             - path: ../application/chassis/chassis_omni.c
+            - path: ../application/chassis/chassis_foot.c
           folders: []
         - name: communication
           files:
@@ -226,6 +228,7 @@ virtualFolder:
             - path: ../application/other/remote_control.c
             - path: ../application/other/test_task.c
             - path: ../application/other/voltage_task.c
+            - path: ../application/other/remoto.c
           folders: []
         - name: referee
           files:
@@ -275,6 +278,8 @@ virtualFolder:
             - path: ../application/typedef_robot/robot_param_fly.h
             - path: ../application/typedef_robot/robot_param_water.h
             - path: ../application/typedef_robot/robot_param_mini_pro.h
+            - path: ../application/typedef_robot/robot_param_foot.h
+            - path: ../application/typedef_robot/remoto.h
           folders: []
 dependenceList: []
 outDir: build
@@ -329,7 +334,23 @@ targets:
         - RTE/_standard_robot
         - ../application/typedef_robot
       libList: []
-    excludeList: []
+    excludeList:
+      - ../application/music/music.c
+      - ../application/music/music_canon.c
+      - ../application/music/music_castle_in_the_sky.c
+      - ../application/music/music_deja_vu.c
+      - ../application/music/music_error.c
+      - ../application/music/music_gong_xi_fa_cai.c
+      - ../application/music/music_hao_yun_lai.c
+      - ../application/music/music_meow.c
+      - ../application/music/music_referee.c
+      - ../application/music/music_see_you_again.c
+      - ../application/music/music_start.c
+      - ../application/music/music_task.c
+      - ../application/music/music_unity.c
+      - ../application/music/music_you.c
+    settings:
+      debugger: cortex-debug
     toolchain: AC5
     toolchainConfigMap:
       AC5:
@@ -342,6 +363,10 @@ targets:
             - name: new postbuild task
               abortAfterFailed: false
               command: 'echo "firmware: ${OutDir}/${ProjectName}.hex"'
+              disable: false
+            - name: axf to elf
+              abortAfterFailed: false
+              command: '"D:\K5\ARM\ARMCLANG\bin\fromelf.exe" --elf -o ${OutDir}\${ProjectName}.elf ${OutDir}\${ProjectName}.axf'
               disable: false
           asm-compiler: {}
           beforeBuildTasks: []
@@ -454,7 +479,7 @@ targets:
         target: stm32f4x
       STLink:
         address: "0x8000000"
-        bin: ""
+        bin: ${ExecutableName}.axf
         elFile: None
         optionBytes: .eide/keil.st.option.bytes.ini
         otherCmds: ""

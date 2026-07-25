@@ -43,6 +43,8 @@
 #include "music_task.h"
 #include "custom_controller_task.h"
 #include "communication_task.h"
+#include "remoto.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,7 +61,7 @@ osThreadId chassisTaskHandle;
 #endif
 
 osThreadId gimbalTaskHandle;
-
+osThreadId remototakshandle;
 #if (SHOOT_TYPE != SHOOT_NONE)
 osThreadId shootTaskHandle;
 #endif
@@ -200,6 +202,8 @@ void MX_FREERTOS_Init(void) {
 
     osThreadDef(gimbalTask, gimbal_task, osPriorityHigh, 0, 512);
     gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
+
+
 
 #if (SHOOT_TYPE != SHOOT_NONE)
     osThreadDef(shootTask, shoot_task, osPriorityHigh, 0, 512);

@@ -27,21 +27,24 @@
 #include "CAN_communication.h"
 #include "remote_control.h"
 #include "detect_task.h"
+#include "IMU.h" //陀螺仪文件
 
 #define USART_RX_BUF_LENGHT 512
 #define USART1_FIFO_BUF_LENGTH 1024
 
 // send data
-BoardCommunicateData_s BOARD_TX_DATA;
+Controller_t BOARD_TX_DATA;
+static const PidGetVofa_t *get_vofa;
 // 全局CAN发送缓冲区
 static CanSendBuffer_t can_buffers[2][2] = {0}; // [CAN总线][标准ID类型]
 // can_buffers[0][0] = CAN1 0x200 (ID 1-4)
-// can_buffers[0][1] = CAN1 0x1FF (ID 5-8) 
+// can_buffers[0][1] = CAN1 0x1FF (ID 5-8)
 // can_buffers[1][0] = CAN2 0x200 (ID 1-4)
 // can_buffers[1][1] = CAN2 0x1FF (ID 5-8)
-uint8_t a1[8];
 // receive data
-uint8_t BOARD_RX_DATA[DATA_NUM][DATA_LEN + 1];  //第一位存放数据长度信息
+
+CCControlData_t ControlData;
+uint8_t BOARD_RX_DATA[DATA_NUM][DATA_LEN + 1]; // 第一位存放数据长度信息
 // receive data buffer
 uint8_t usart1_buf[2][USART_RX_BUF_LENGHT];
 fifo_s_t usart1_fifo;
@@ -58,7 +61,8 @@ void SendInit(void)
 
 void SendRC()
 {
-    if(BOARD_CURRENT != C_BOARD_UP || toe_is_error(DBUS_TOE)) return; // 如果当前板子不是上板，或者遥控器断开连接，则不发送遥控器数据
+    if (BOARD_CURRENT != C_BOARD_UP || toe_is_error(DBUS_TOE))
+        return; // 如果当前板子不是上板，或者遥控器断开连接，则不发送遥控器数据
     uint8_t data_8[8];
     // 获取-1到1的浮点数
     float ch0_float = GetDt7RcCh(0); // 范围: -1.0 ~ 1.0
@@ -66,46 +70,46 @@ void SendRC()
     float ch2_float;
     if (GetDt7Keyboard(KEY_SHIFT))
     {
-        velocity=1.0f;
+        velocity = 1.0f;
     }
     else
     {
-        velocity=0.5f;
+        velocity = 0.5f;
     }
     // 使用128作为中值的映射算法
-    if(GetDt7Keyboard(KEY_W))
+    if (GetDt7Keyboard(KEY_W))
     {
-    ch1_float=velocity;
+        ch1_float = velocity;
     }
     else if (GetDt7Keyboard(KEY_S))
     {
-    ch1_float=-velocity;  
+        ch1_float = -velocity;
     }
-    if(GetDt7Keyboard(KEY_D))
+    if (GetDt7Keyboard(KEY_D))
     {
-    ch0_float=velocity;
+        ch0_float = velocity;
     }
     else if (GetDt7Keyboard(KEY_A))
     {
-    ch0_float=-velocity; 
+        ch0_float = -velocity;
     }
-    if(GetDt7RcSw(0)==RC_SW_UP)
+    if (GetDt7RcSw(0) == RC_SW_UP)
     {
-            ch2_float=0;
+        ch2_float = 0;
 
-    // ch2_float = -GetDt7RcCh(2); // 范围: -1.0 ~ 1.0
+        // ch2_float = -GetDt7RcCh(2); // 范围: -1.0 ~ 1.0
     }
     else
     {
-    ch2_float=0;
+        ch2_float = 0;
     }
-    if(GetDt7Keyboard(KEY_Q))
+    if (GetDt7Keyboard(KEY_Q))
     {
-        ch2_float=1;
+        ch2_float = 1;
     }
-    else if(GetDt7Keyboard(KEY_E))
+    else if (GetDt7Keyboard(KEY_E))
     {
-        ch2_float=-1;
+        ch2_float = -1;
     }
     // 公式: uint8_val = (float_val * 127) + 128
     int16_t temp_ch0 = (int16_t)(ch0_float * 127.0f + 128.0f);
@@ -114,9 +118,10 @@ void SendRC()
 
     // 限制范围防止溢出
     data_8[0] = (uint8_t)(temp_ch0 < 0 ? 0 : (temp_ch0 > 255 ? 255 : temp_ch0));
-    data_8[1] = (uint8_t)(temp_ch1 < 0 ? 0 : (temp_ch1 > 255 ? 255 : temp_ch1));    
-    data_8[2] = (uint8_t)(temp_ch2 < 0 ? 0 : (temp_ch2 > 255 ? 255 : temp_ch2));   ;
-    
+    data_8[1] = (uint8_t)(temp_ch1 < 0 ? 0 : (temp_ch1 > 255 ? 255 : temp_ch1));
+    data_8[2] = (uint8_t)(temp_ch2 < 0 ? 0 : (temp_ch2 > 255 ? 255 : temp_ch2));
+    ;
+
     data_8[3] = 0;
 
     switch (GetDt7RcSw(0))
@@ -138,13 +143,11 @@ void SendRC()
     data_8[5] = 0;
     data_8[6] = 0;
     data_8[7] = 1;
-    a1[0]=data_8[0];
-    a1[1]=data_8[1];
-    a1[2]=data_8[2];
-    a1[4]=data_8[4];
 
+#if BOARD_CURRENT != C_BOARD_DEFAULT
     // 通过CAN总线发送遥控器的四个通道数据到指定板子
     CanSendDataToBoard(BOARD_CAN, BOARD_DATA_ID, BOARD_OTHER, data_8);
+#endif
 }
 
 /**
@@ -154,10 +157,13 @@ void SendRC()
  */
 void CanManagerClearBuffer(void)
 {
-    for (int can = 0; can < 2; can++) {
-        for (int std_id = 0; std_id < 2; std_id++) {
+    for (int can = 0; can < 2; can++)
+    {
+        for (int std_id = 0; std_id < 2; std_id++)
+        {
             can_buffers[can][std_id].need_send = false;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 4; i++)
+            {
                 can_buffers[can][std_id].data[i] = 0;
             }
         }
@@ -167,7 +173,7 @@ void CanManagerClearBuffer(void)
 /**
  * @brief          添加电机控制量到发送缓冲区
  * @param[in]      motor_id: 电机ID (1-8)
- * @param[in]      can_bus: CAN总线 (1或2)  
+ * @param[in]      can_bus: CAN总线 (1或2)
  * @param[in]      current: 控制电流
  * @retval         bool: 成功返回true，失败返回false
  */
@@ -232,12 +238,14 @@ void CanManagerSendAll(void)
 void USART1_IRQHandler(void)
 {
     static volatile uint8_t res;
-    if (USART1->SR & UART_FLAG_IDLE) {
+    if (USART1->SR & UART_FLAG_IDLE)
+    {
         __HAL_UART_CLEAR_PEFLAG(&huart1);
 
         static uint16_t this_time_rx_len = 0;
 
-        if ((huart1.hdmarx->Instance->CR & DMA_SxCR_CT) == RESET) {
+        if ((huart1.hdmarx->Instance->CR & DMA_SxCR_CT) == RESET)
+        {
             __HAL_DMA_DISABLE(huart1.hdmarx);
             this_time_rx_len = USART_RX_BUF_LENGHT - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
             __HAL_DMA_SET_COUNTER(huart1.hdmarx, USART_RX_BUF_LENGHT);
@@ -245,7 +253,9 @@ void USART1_IRQHandler(void)
             __HAL_DMA_ENABLE(huart1.hdmarx);
             fifo_s_puts(&usart1_fifo, (char *)usart1_buf[0], this_time_rx_len);
             // detect_hook(REFEREE_TOE);
-        } else {
+        }
+        else
+        {
             __HAL_DMA_DISABLE(huart1.hdmarx);
             this_time_rx_len = USART_RX_BUF_LENGHT - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
             __HAL_DMA_SET_COUNTER(huart1.hdmarx, USART_RX_BUF_LENGHT);
@@ -257,22 +267,41 @@ void USART1_IRQHandler(void)
     }
 }
 
+void uart_updata()
+{
+    // get_vofa= Subscribe(PID_GET_VOFA_NAME);
+    // ControlData.pos[0] = GetImuAngle(AX_PITCH);
+    // ControlData.pos[1] = GetImuAngle(AX_YAW);
+    // ControlData.pos[2] = GetImuAngle(AX_ROLL);
+    ControlData.pos[3] = get_vofa->angle_kd;
+    ControlData.pos[4] = get_vofa->angle_ki;
+    ControlData.pos[5] = get_vofa->angle_kp;
+    ControlData.pos[6] = (fp32)0xffffffff;
+
+    
+    
+
+    DataPack((uint8_t *)&ControlData, (uint16_t)45, 0x0302);
+}
+
 /**
  * @brief 将数据打包填入发送数据结构体中
  * @param data 数据段的数组指针
  * @param data_lenth 数据段长度
  * @param data_id 数据段id
  */
-void DataPack(uint8_t * data, uint8_t data_lenth, uint8_t data_id)
+void DataPack(uint8_t *data, uint16_t data_lenth, uint16_t data_id)
 {
-    BOARD_TX_DATA.frame_header.sof = 0xA5;        // 数据帧起始字节，固定值为 0xA5
-    BOARD_TX_DATA.frame_header.len = data_lenth;  // 数据帧中数据段的长度
-    BOARD_TX_DATA.frame_header.id = data_id;
+    BOARD_TX_DATA.frame_header.sof = 0xA5;       // 数据帧起始字节，固定值为 0xA5
+    BOARD_TX_DATA.frame_header.data_length = data_lenth; // 数据帧中数据段的长度
+    BOARD_TX_DATA.frame_header.seq = 0;           // 包序号
+    BOARD_TX_DATA.frame_header.crc8 = 0;          // 帧头CRC8校验
+    BOARD_TX_DATA.cmd_id = data_id;                       // 数据段id
     // 添加帧头 CRC8 校验位
     append_CRC8_check_sum(
         (uint8_t *)(&BOARD_TX_DATA.frame_header), sizeof(BOARD_TX_DATA.frame_header));
 
-    memcpy(BOARD_TX_DATA.data, data, data_lenth);  // 数据段
+    memcpy(BOARD_TX_DATA.data, data, data_lenth); // 数据段
 
     // 帧尾CRC16，整包校验
     append_CRC16_check_sum((uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA));
@@ -284,22 +313,26 @@ void DataUnpack(void)
     uint8_t frame_header[FRAME_HEADER_LEN] = {0};
     uint8_t received[FRAME_HEADER_LEN + DATA_LEN + 2] = {0};
 
-    while (fifo_s_used(&usart1_fifo)) {
+    while (fifo_s_used(&usart1_fifo))
+    {
         byte = fifo_s_get(&usart1_fifo);
-        if (byte == FRAME_HEADER_SOF) {
+        if (byte == FRAME_HEADER_SOF)
+        {
             frame_header[0] = byte;
             fifo_s_gets(&usart1_fifo, (char *)(frame_header + 1), FRAME_HEADER_LEN - 1);
 
             uint8_t header_crc_ok = verify_CRC8_check_sum(frame_header, FRAME_HEADER_LEN);
-            if (header_crc_ok) {
-                memcpy(received, frame_header, FRAME_HEADER_LEN);  //转移帧头信息
+            if (header_crc_ok)
+            {
+                memcpy(received, frame_header, FRAME_HEADER_LEN); // 转移帧头信息
                 uint8_t data_len = frame_header[FRAME_HEADER_LEN_OFFEST];
                 uint8_t data_id = frame_header[FRAME_HEADER_ID_OFFEST];
                 // uint8_t data_type = frame_header[FRAME_HEADER_TYPE_OFFEST];
 
                 fifo_s_gets(&usart1_fifo, (char *)(received + FRAME_HEADER_LEN), DATA_LEN + 2);
                 uint16_t crc_ok = verify_CRC16_check_sum(received, sizeof(BoardCommunicateData_s));
-                if (crc_ok) {
+                if (crc_ok)
+                {
                     BOARD_RX_DATA[data_id][0] = data_len;
                     memcpy(&BOARD_RX_DATA[data_id][1], received + FRAME_HEADER_LEN, data_len);
                 }
@@ -307,5 +340,3 @@ void DataUnpack(void)
         }
     }
 }
-
-

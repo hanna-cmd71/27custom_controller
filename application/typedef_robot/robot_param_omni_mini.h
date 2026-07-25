@@ -9,15 +9,16 @@
 
 //快速选择对应的板子
 // #define BOARD_CURRENT C_BOARD_DEFAULT
-// #define BOARD_CURRENT C_BOARD_DOWN
-#define BOARD_CURRENT C_BOARD_UP
+#define BOARD_CURRENT C_BOARD_DOWN
+// #define BOARD_CURRENT C_BOARD_UP
 
 // 快速设置双板的配置
 #if(BOARD_CURRENT == C_BOARD_DOWN)
-#define CHASSIS_TYPE CHASSIS_OMNI_WHEEL                 // 选择底盘类型
-#define GIMBAL_TYPE GIMBAL_NONE                         // 选择云台类型
+#define CHASSIS_TYPE CHASSIS_NONE                 // 选择底盘类型
+#define GIMBAL_TYPE CHASSIS_NONE                         // 选择云台类型
 #define SHOOT_TYPE SHOOT_NONE                           // 选择发射机构类型
 #define BOARD_OTHER C_BOARD_UP                          // 选择其他板子类型
+
 
 #elif(BOARD_CURRENT == C_BOARD_UP)
 #define CHASSIS_TYPE CHASSIS_NONE                       // 选择底盘类型
@@ -37,7 +38,7 @@
 
 // IMU安装角度参数 (单位：度) yaw -> pitvh -> roll
 #define IMU_ROLL_ANGLE (0.0f)     // 绕X轴旋转角度
-#define IMU_PITCH_ANGLE (180.0f)    // 绕Y轴旋转角度 
+#define IMU_PITCH_ANGLE (0.0f)    // 绕Y轴旋转角度 
 #define IMU_YAW_ANGLE (0.0f)      // 绕Z轴旋转角度  
 
 
@@ -67,10 +68,10 @@
 #define WHEEL_4_ID (1)
 
 // 电机CAN ---------------------
-#define WHEEL_1_CAN (2)
-#define WHEEL_2_CAN (2)
-#define WHEEL_3_CAN (2)
-#define WHEEL_4_CAN (2)
+#define WHEEL_1_CAN (1)
+#define WHEEL_2_CAN (1)
+#define WHEEL_3_CAN (1)
+#define WHEEL_4_CAN (1)
 #define GIMBAL_YAW_CAN 1
 // 电机种类
 #define WHEEL_1_MOTOR_TYPE ((MotorType_e)DJI_M3508)
@@ -157,9 +158,10 @@
 #define GIMBAL_DIRECT_PITCH_MODE (0)
 
 // physical parameters ---------------------
-#define GIMBAL_UPPER_LIMIT_PITCH (1.31f)
-#define GIMBAL_LOWER_LIMIT_PITCH (0.4f)
-
+// #define GIMBAL_UPPER_LIMIT_PITCH (1.31f)
+// #define GIMBAL_LOWER_LIMIT_PITCH (0.4f)
+#define GIMBAL_UPPER_LIMIT_PITCH (-0.55f)
+#define GIMBAL_LOWER_LIMIT_PITCH (-1.62)
 #define GIMBAL_YAW_LIMIT (0) // 云台yaw轴是否有限位 1 - 有限位，0 - 无限位
 
 // 电机角度中值设置
@@ -184,7 +186,7 @@
 #define MAX_IOUT_GIMBAL_YAW_VELOCITY (1000.0f)
 
 // PITCH ANGLE
-#define KP_GIMBAL_PITCH_ANGLE (5.5f)
+#define KP_GIMBAL_PITCH_ANGLE (300.5f)
 #define KI_GIMBAL_PITCH_ANGLE (0.07f)
 #define KD_GIMBAL_PITCH_ANGLE (0.3f)
 #define MAX_IOUT_GIMBAL_PITCH_ANGLE (9.0f)
@@ -216,12 +218,12 @@
 
 // 电机ID
 #define TRIGGER_MOTOR_ID 7
-#define FRIC_MOTOR_R_ID 2
+#define FRIC_MOTOR_R_ID 4
 #define FRIC_MOTOR_L_ID 1
 #define FRIC_MOTOR_U_ID 9
 // 电机can口
-#define TRIGGER_MOTOR_CAN 2
-#define FRIC_MOTOR_R_CAN 1
+#define TRIGGER_MOTOR_CAN 1
+#define FRIC_MOTOR_R_CAN 2
 #define FRIC_MOTOR_L_CAN 1
 #define FRIC_MOTOR_U_CAN 1
 #define FRIC_MOTOR_R_DIRECTION 1
@@ -233,10 +235,10 @@
 // 单环拨弹速度
 #define TRIGGER_SPEED (-400.0f)
 // 摩擦轮速度
-#define FRIC_R_SPEED (800.0f)
-#define FRIC_L_SPEED (-800.0f)
-#define FRIC_U_SPEED (-800.0f)
-#define FRIC_SPEED_LIMIT (600.0f)
+#define FRIC_R_SPEED (400.0f)
+#define FRIC_L_SPEED (-400.0f)
+#define FRIC_U_SPEED (-200.0f)
+#define FRIC_SPEED_LIMIT (800.0f)
 
 /*ECD parameters------------*/
 // 电机反馈码盘值范围

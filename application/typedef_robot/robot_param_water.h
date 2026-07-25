@@ -7,10 +7,10 @@
 #define INCLUDED_ROBOT_PARAM_H
 #include "robot_typedef.h"
 //快速选择对应的板子
-// #define BOARD_CURRENT C_BOARD_DEFAULT
+#define BOARD_CURRENT C_BOARD_DEFAULT
 // #define BOARD_CURRENT C_BOARD_DOWN
 // #define BOARD_CURRENT 666
-#define BOARD_CURRENT C_BOARD_UP
+// #define BOARD_CURRENT C_BOARD_UP
 // 快速设置双板的配置
 #if(BOARD_CURRENT == C_BOARD_DOWN)
 #define CHASSIS_TYPE CHASSIS_OMNI_WHEEL                 // 选择底盘类型
@@ -25,9 +25,10 @@
 #define BOARD_OTHER C_BOARD_DOWN                        // 选择其他板子类型
 
 #elif(BOARD_CURRENT == C_BOARD_DEFAULT)
-#define CHASSIS_TYPE CHASSIS_OMNI_WHEEL                 // 选择底盘类型
+#define CHASSIS_TYPE CHASSIS_FOOT_WHEEL                 // 选择底盘类型
 #define GIMBAL_TYPE GIMBAL_DOUBLE_YAW_PITCH             // 选择云台类型
 #define SHOOT_TYPE SHOOT_FRIC_TRIGGER                   // 选择发射机构类型
+#define BOARD_OTHER C_BOARD_DEFAULT                        // 选择其他板子类型
 
 #elif(BOARD_CURRENT == 666)
 #define CHASSIS_TYPE CHASSIS_OMNI_WHEEL                       // 选择底盘类型
@@ -55,7 +56,7 @@
 // physical parameters ---------------------
 #define WHEEL_RADIUS (0.15f)           //(m)轮子直径
 #define WHEEL_CENTER_DISTANCE (0.245f) //(m)轮子到车的距离（0.22 + 0.21）
-#define yaw_mid_date 0.98f
+#define yaw_mid_date 1.98f
 
 // motor parameters ---------------------
 // 底盘电流发送参数
@@ -69,8 +70,8 @@
 #define WHEEL_4_ID (4)
 
 // 电机CAN ---------------------
-#define WHEEL_1_CAN (2)
-#define WHEEL_2_CAN (2)
+#define WHEEL_1_CAN (1)
+#define WHEEL_2_CAN (1)
 #define WHEEL_3_CAN (2)
 #define WHEEL_4_CAN (2)
 
@@ -100,10 +101,10 @@
 
 // PID parameters ---------------------
 // 驱动轮速度环PID参数
-#define KP_OMNI_VEL (130.0f)
+#define KP_OMNI_VEL (50.0f)
 #define KI_OMNI_VEL (0.4f)
 #define KD_OMNI_VEL (0.3f)
-#define MAX_IOUT_OMNI_VEL (2000.0f)
+#define MAX_IOUT_OMNI_VEL (9000.0f)
 #define MAX_OUT_OMNI_VEL (15000.0f)
 
 // 云台跟随角度环PID参数
@@ -133,7 +134,7 @@
 
 // remote controller sensitivity ---------------------
 #define RC_TO_VECTOR_SCALE (0.006f)
-#define REMOTE_CONTROLLER_SENSITIVITY_YAW (200.0f)   // 云台遥控器灵敏度
+#define REMOTE_CONTROLLER_SENSITIVITY_YAW (300.0f)   // 云台遥控器灵敏度
 #define REMOTE_CONTROLLER_SENSITIVITY_PITCH (600.0f) // 云台遥控器灵敏度
 #define REMOTE_CONTROLLER_MAX_DEADLINE (0.05f)
 #define REMOTE_CONTROLLER_MIN_DEADLINE (-0.05f)
@@ -168,8 +169,10 @@
 #define GIMBAL_DIRECT_PITCH_MODE  (0)
 
 // physical parameters ---------------------
-#define GIMBAL_UPPER_LIMIT_PITCH  (1.4f)
-#define GIMBAL_LOWER_LIMIT_PITCH  (0.2f)
+// #define GIMBAL_UPPER_LIMIT_PITCH  (1.4f)
+// #define GIMBAL_LOWER_LIMIT_PITCH  (0.2f)
+#define GIMBAL_UPPER_LIMIT_PITCH  (-1.5f)
+#define GIMBAL_LOWER_LIMIT_PITCH  (-2.41f)
 #define GIMBAL_LOWER_LIMIT_YAW_BA (-M_PI)
 #define GIMBAL_UPPER_LIMIT_YAW_BA (M_PI)
 #define GIMBAL_LOWER_LIMIT_YAW_UP (1.2f)
@@ -186,38 +189,63 @@
 // PID parameters ---------------------
 // YAW BA ANGLE
 
-#define KP_GIMBAL_YAW_BA_ANGLE (20.0f)
+// #define KP_GIMBAL_YAW_BA_ANGLE (500.0f)
+// #define KI_GIMBAL_YAW_BA_ANGLE (0.88f)
+// #define KD_GIMBAL_YAW_BA_ANGLE (100.0f)
+// #define MAX_OUT_GIMBAL_YAW_BA_ANGLE  (15.0f)
+// #define MAX_IOUT_GIMBAL_YAW_BA_ANGLE (1.7f)
+// // VELOCITY:角速度
+// #define KP_GIMBAL_YAW_BA_VELOCITY (1000.0f)
+// #define KI_GIMBAL_YAW_BA_VELOCITY (5.3f)
+// #define KD_GIMBAL_YAW_BA_VELOCITY (10000.0f)
+// #define MAX_OUT_GIMBAL_YAW_BA_VELOCITY (15000.0f)
+// #define MAX_IOUT_GIMBAL_YAW_BA_VELOCITY (3000.0f)
+
+// #define KP_GIMBAL_YAW_BA_ANGLE (30.0f)
+// #define KI_GIMBAL_YAW_BA_ANGLE (0.11f)
+// #define KD_GIMBAL_YAW_BA_ANGLE (5.0f)
+// #define MAX_OUT_GIMBAL_YAW_BA_ANGLE  (10.0f)
+// #define MAX_IOUT_GIMBAL_YAW_BA_ANGLE (0.0f)
+// // VELOCITY:角速度
+// #define KP_GIMBAL_YAW_BA_VELOCITY (5200.0f)
+// #define KI_GIMBAL_YAW_BA_VELOCITY (23.3f)
+// #define KD_GIMBAL_YAW_BA_VELOCITY (500.0f)
+// #define MAX_OUT_GIMBAL_YAW_BA_VELOCITY (15000.0f)
+// #define MAX_IOUT_GIMBAL_YAW_BA_VELOCITY (810.0f)
+
+#define KP_GIMBAL_YAW_BA_ANGLE (10.0f)
 #define KI_GIMBAL_YAW_BA_ANGLE (0.0f)
 #define KD_GIMBAL_YAW_BA_ANGLE (0.0f)
 #define MAX_OUT_GIMBAL_YAW_BA_ANGLE  (5.0f)
 #define MAX_IOUT_GIMBAL_YAW_BA_ANGLE (0.0f)
 // VELOCITY:角速度
-#define KP_GIMBAL_YAW_BA_VELOCITY (3000.0f)
+#define KP_GIMBAL_YAW_BA_VELOCITY (8000.0f)
 #define KI_GIMBAL_YAW_BA_VELOCITY (0.03f)
-#define KD_GIMBAL_YAW_BA_VELOCITY (1000.0f)
+#define KD_GIMBAL_YAW_BA_VELOCITY (3000.0f)
 #define MAX_OUT_GIMBAL_YAW_BA_VELOCITY (15000.0f)
-#define MAX_IOUT_GIMBAL_YAW_BA_VELOCITY (5000.0f)
+#define MAX_IOUT_GIMBAL_YAW_BA_VELOCITY (0.0f)
+
 
 // YAW UP ANGLE
 #define KP_GIMBAL_YAW_UP_ANGLE (30.0f)
-#define KI_GIMBAL_YAW_UP_ANGLE (0.1f)
-#define KD_GIMBAL_YAW_UP_ANGLE (0.0f)
-#define MAX_OUT_GIMBAL_YAW_UP_ANGLE  (20.0f)
+#define KI_GIMBAL_YAW_UP_ANGLE (0.31f)
+#define KD_GIMBAL_YAW_UP_ANGLE (5.0f)
+#define MAX_OUT_GIMBAL_YAW_UP_ANGLE  (10.0f)
 #define MAX_IOUT_GIMBAL_YAW_UP_ANGLE (0.0f)
 // VELOCITY:角速度
 #define KP_GIMBAL_YAW_UP_VELOCITY (2000.0f)
-#define KI_GIMBAL_YAW_UP_VELOCITY (2.0f)
-#define KD_GIMBAL_YAW_UP_VELOCITY (10.0f)
-#define MAX_OUT_GIMBAL_YAW_UP_VELOCITY  (12000.0f)
+#define KI_GIMBAL_YAW_UP_VELOCITY (23.0f)
+#define KD_GIMBAL_YAW_UP_VELOCITY (0.0f)
+#define MAX_OUT_GIMBAL_YAW_UP_VELOCITY  (14700.0f)
 #define MAX_IOUT_GIMBAL_YAW_UP_VELOCITY (0.0f)
 // PITCH ANGLE
-#define KP_GIMBAL_PITCH_ANGLE (100.0f)
+#define KP_GIMBAL_PITCH_ANGLE (500.0f)
 #define KI_GIMBAL_PITCH_ANGLE (0.5f)
 #define KD_GIMBAL_PITCH_ANGLE (21.0f)
 #define MAX_IOUT_GIMBAL_PITCH_ANGLE (1.0)
 #define MAX_OUT_GIMBAL_PITCH_ANGLE  (10.0f)
 // VELOCITY:角速度
-#define KP_GIMBAL_PITCH_VELOCITY (800.0f)
+#define KP_GIMBAL_PITCH_VELOCITY (1100.0f)
 #define KI_GIMBAL_PITCH_VELOCITY (1.1)
 #define KD_GIMBAL_PITCH_VELOCITY (100.0f)
 #define MAX_IOUT_GIMBAL_PITCH_VELOCITY (0.0f)
@@ -271,8 +299,8 @@
 // 单环拨弹速度
 #define TRIGGER_SPEED (-200.0f)
 // 摩擦轮速度
-#define FRIC_R_SPEED (-800.0f)    //660
-#define FRIC_L_SPEED (-800.0f)
+#define FRIC_R_SPEED (-400.0f)    //660
+#define FRIC_L_SPEED (-400.0f)
 #define FRIC_U_SPEED (0.0f)
 #define FRIC_SPEED_LIMIT (150.0f) //600
 
@@ -320,7 +348,7 @@
 #define FIRC_SPEED_PID_KI (0.9f)
 #define FRIC_SPEED_PID_KD (0.0f)
 
-#define FRIC_PID_MAX_OUT (16000.0f)
+#define FRIC_PID_MAX_OUT (14000.0f)
 #define FRIC_PID_MAX_IOUT (3000.0f)
 
 // 当未连接裁判系统设置负值方便调试

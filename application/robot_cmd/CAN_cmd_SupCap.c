@@ -15,7 +15,7 @@
   */
 #include "CAN_cmd_SupCap.h"
 
-CanCtrlData_s CAN_CTRL_DATA = {
+static CanCtrlData_s CAN_CTRL_DATA = {
     .tx_header.IDE = CAN_ID_STD,
     .tx_header.RTR = CAN_RTR_DATA,
     .tx_header.DLC = 2,

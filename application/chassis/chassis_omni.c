@@ -25,6 +25,7 @@
 #include "gimbal.h"
 #include "usb_debug.h"
 #include "communication.h"
+#include "IMU.h"//陀螺仪文件
 
 #include <math.h>
 #include <string.h>
@@ -141,47 +142,56 @@ void ChassisReference(void)
         chassis.reference_rc.vy = GetDt7RcCh(1);
         chassis.reference_rc.chassis_mode = GetDt7RcSw(0);
     }
+
     else
     {
         GetBoardInfo(&chassis.reference_rc);
     }
-
-    switch (chassis.reference_rc.chassis_mode)
+        chassis.reference.vy = GetImuAngle(AX_PITCH);
+if(chassis.reference.vy<0.3f && chassis.reference.vy>-0.3f)
     {
-    case CHASSIS_NOMOVE:
-    {
-        chassis.reference.vx = 0;
         chassis.reference.vy = 0;
-        chassis.reference.wz = 0;
-        break;
     }
-    case CHASSIS_NO_FOLLOW:
-    {
-        float sin_yaw = sin(chassis.yaw_delta);
-        float cos_yaw = cos(chassis.yaw_delta);
-        chassis.reference.vx = (chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
-        chassis.reference.vy = (chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
-        chassis.reference.wz = chassis.reference_rc.wz*1.5f;
-        break;
-    }
-    case CHASSIS_FOLLOW_GIMBAL_YAW:
-    {
-        float sin_yaw = sin(chassis.yaw_delta);
-        float cos_yaw = cos(chassis.yaw_delta);
-        chassis.reference.vx = (-chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
-        chassis.reference.vy = (-chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
-        chassis.reference.wz = 0; // PID_calc(&chassis_pid.follow, chassis.yaw_delta, 0);
-        break;
-    }
-    case CHASSIS_SPIN:
-    {
-        float sin_yaw = sin(chassis.yaw_delta);
-        float cos_yaw = cos(chassis.yaw_delta);
-        chassis.reference.vx = (chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
-        chassis.reference.vy = (chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
-        chassis.reference.wz = 2*CHASSIS_RC_MAX_SPEED;
-        break;
-    }
+
+    // switch (chassis.reference_rc.chassis_mode)
+    // {
+    // case CHASSIS_NOMOVE:
+    // {
+    //     chassis.reference.vx = 0;
+    //     chassis.reference.vy = 0;
+    //     chassis.reference.wz = 0;
+    //     break;
+    // }
+    // case CHASSIS_NO_FOLLOW:
+    //     case 3:
+
+    // {
+    //     float sin_yaw = sin(chassis.yaw_delta);
+    //     float cos_yaw = cos(chassis.yaw_delta);
+    //     chassis.reference.vx = (chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
+    //     chassis.reference.vy = (chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
+    //     chassis.reference.wz = chassis.reference_rc.wz*1.5f;
+    //     break;
+    // }
+    // case CHASSIS_FOLLOW_GIMBAL_YAW:
+    // {
+    //     float sin_yaw = sin(chassis.yaw_delta);
+    //     float cos_yaw = cos(chassis.yaw_delta);
+    //     chassis.reference.vx = (-chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
+    //     chassis.reference.vy = (-chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
+    //     chassis.reference.wz = 0; // PID_calc(&chassis_pid.follow, chassis.yaw_delta, 0);
+    //     break;
+    // }
+    // case CHASSIS_SPIN:
+    // {
+    //     float sin_yaw = sin(chassis.yaw_delta);
+    //     float cos_yaw = cos(chassis.yaw_delta);
+    //     chassis.reference.vx = (chassis.reference_rc.vx * cos_yaw - chassis.reference_rc.vy * sin_yaw) * CHASSIS_RC_MAX_SPEED;
+    //     chassis.reference.vy = (chassis.reference_rc.vx * sin_yaw + chassis.reference_rc.vy * cos_yaw) * CHASSIS_RC_MAX_SPEED;
+    //     chassis.reference.wz = 2*CHASSIS_RC_MAX_SPEED;
+    //     break;
+    // }
+    
     // case CHASSIS_SPIN:
     // {
     //     float sin_yaw = sin(chassis.yaw_delta);
@@ -191,15 +201,15 @@ void ChassisReference(void)
     //     chassis.reference.wz = 1.0f * CHASSIS_RC_MAX_VELOCITY;
     //     break;
     // }
-    }
+    // }
 
     // 离线保命
-    if (toe_is_error(BOARD_COMMUNICATION_TOE))
-    {
-        chassis.reference.vx = 0;
-        chassis.reference.vy = 0;
-        chassis.reference.wz = 0;
-    }
+    // if (toe_is_error(BOARD_COMMUNICATION_TOE))
+    // {
+    //     chassis.reference.vx = 0;
+    //     chassis.reference.vy = 0;
+    //     chassis.reference.wz = 0;
+    // }
 }
 
 /*-------------------- Console --------------------*/
@@ -211,7 +221,7 @@ void ChassisReference(void)
  */
 void ChassisConsole(void)
 {
-    chassis.set[0] = (sqrt(2) * (-chassis.reference.vx - chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[0].reduction_ratio;
+    chassis.set[0] = (sqrt(2) * (-chassis.reference.vx + chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[0].reduction_ratio;
     chassis.set[1] = (sqrt(2) * (-chassis.reference.vx + chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[1].reduction_ratio;
     chassis.set[2] = (sqrt(2) * (chassis.reference.vx + chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[2].reduction_ratio;
     chassis.set[3] = (sqrt(2) * (chassis.reference.vx - chassis.reference.vy) - WHEEL_CENTER_DISTANCE * chassis.reference.wz) / WHEEL_RADIUS * chassis.wheel[3].reduction_ratio;

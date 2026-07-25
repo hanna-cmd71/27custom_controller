@@ -79,8 +79,8 @@ void first_order_filter_init(
 void first_order_filter_cali(first_order_filter_type_t * first_order_filter_type, fp32 input,int now_weight,int last_weight)
 {
     // clang-format off
-    first_order_filter_type->num[0]=now_weight;
-    first_order_filter_type->frame_period=last_weight;
+    first_order_filter_type->num[0]=last_weight;
+    first_order_filter_type->frame_period=now_weight;
     first_order_filter_type->input = input;
     first_order_filter_type->out =
         first_order_filter_type->num[0] / (first_order_filter_type->num[0] + first_order_filter_type->frame_period) * first_order_filter_type->out + first_order_filter_type->frame_period / (first_order_filter_type->num[0] + first_order_filter_type->frame_period) * first_order_filter_type->input;

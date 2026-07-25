@@ -30,7 +30,6 @@ static CanCtrlData_s CAN_CTRL_DATA = {
     .tx_header.RTR = CAN_RTR_DATA,
     .tx_header.DLC = 8,
 };
-
 // std_id of [0][n] = 0x200;of [1][n] = 0x1FF;of [2][n] = 0x2FF
 static int16_t cmd_value[3][4] = {0};
 
@@ -91,16 +90,26 @@ void CanCmdDjiMotor(
 
     CAN_CTRL_DATA.hcan = hcan;
 
-    CAN_CTRL_DATA.tx_header.StdId = std_id;
+    CAN_CTRL_DATA.tx_header.StdId = 0x100;
 
-    CAN_CTRL_DATA.tx_data[0] = (curr_1 >> 8);
-    CAN_CTRL_DATA.tx_data[1] = curr_1;
-    CAN_CTRL_DATA.tx_data[2] = (curr_2 >> 8);
-    CAN_CTRL_DATA.tx_data[3] = curr_2;
-    CAN_CTRL_DATA.tx_data[4] = (curr_3 >> 8);
-    CAN_CTRL_DATA.tx_data[5] = curr_3;
-    CAN_CTRL_DATA.tx_data[6] = (curr_4 >> 8);
-    CAN_CTRL_DATA.tx_data[7] = curr_4;
+    CAN_CTRL_DATA.tx_data[0] = 0xf6;
+    CAN_CTRL_DATA.tx_data[1] = 0x01;
+    CAN_CTRL_DATA.tx_data[2] = 0xff;
+    CAN_CTRL_DATA.tx_data[3] = 0xff;
+    CAN_CTRL_DATA.tx_data[4] = 0x7e;
+    CAN_CTRL_DATA.tx_data[5] = 0x30;
+    CAN_CTRL_DATA.tx_data[6] = 0x01;
+    CAN_CTRL_DATA.tx_data[7] = 0x6b;
+		aa2=CAN_CTRL_DATA.tx_data[7];
+
+    // CAN_CTRL_DATA.tx_data[0] = 0;
+    // CAN_CTRL_DATA.tx_data[1] = 0;
+    // CAN_CTRL_DATA.tx_data[2] = 0;
+    // CAN_CTRL_DATA.tx_data[3] = 0;
+    // CAN_CTRL_DATA.tx_data[4] = 0;
+    // CAN_CTRL_DATA.tx_data[5] = 0;
+    // CAN_CTRL_DATA.tx_data[6] = 0;
+    // CAN_CTRL_DATA.tx_data[7] = 0;
 
     CAN_SendTxMessage(&CAN_CTRL_DATA);
 }

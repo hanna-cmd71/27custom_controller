@@ -564,8 +564,8 @@ void ShootReference(void)
     break;
 
   case FRIC_READY:
-    SHOOT.REF.fric_speed_ref_R = FRIC_R_SPEED * FRIC_MOTOR_R_DIRECTION;
-    SHOOT.REF.fric_speed_ref_L = FRIC_L_SPEED * FRIC_MOTOR_L_DIRECTION;
+    SHOOT.REF.fric_speed_ref_R = 0 * FRIC_MOTOR_R_DIRECTION;
+    SHOOT.REF.fric_speed_ref_L = SHOOT.rc->rc.ch[0] * FRIC_MOTOR_L_DIRECTION;
     SHOOT.REF.fric_speed_ref_U = FRIC_U_SPEED * FRIC_MOTOR_U_DIRECTION;
     break;
 
@@ -756,11 +756,11 @@ void ShootConsole(void)
 void ShootSendCmd(void)
 {
   // 发射机构通信
-  CanManagerAddMotor(SHOOT.fric_motor[0].id, SHOOT.fric_motor[0].can, SHOOT.fric_motor[0].set.curr);
+  // CanManagerAddMotor(SHOOT.fric_motor[0].id, SHOOT.fric_motor[0].can, SHOOT.fric_motor[0].set.curr);
   CanManagerAddMotor(SHOOT.fric_motor[1].id, SHOOT.fric_motor[1].can, SHOOT.fric_motor[1].set.curr);
-  // CanManagerAddMotor(SHOOT.fric_motor[0].id, SHOOT.fric_motor[0].can, 15000);
+  CanManagerAddMotor(SHOOT.fric_motor[0].id, SHOOT.fric_motor[0].can, 2000);
   // CanManagerAddMotor(SHOOT.fric_motor[1].id, SHOOT.fric_motor[1].can, 15000);
-  CanManagerAddMotor(SHOOT.fric_motor[2].id, SHOOT.fric_motor[2].can, SHOOT.fric_motor[2].set.curr);
+  // CanManagerAddMotor(SHOOT.fric_motor[2].id, SHOOT.fric_motor[2].can, SHOOT.fric_motor[2].set.curr);
   
   //处理大疆电机
   if (TRIGGER_MOTOR_TYPE == DJI_M3508 || TRIGGER_MOTOR_TYPE == DJI_M2006)

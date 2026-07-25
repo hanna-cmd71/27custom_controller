@@ -31,7 +31,6 @@ Gimbal_s gimbal_direct;
 Gimbal_PID_t gimbal_direct_pid;
 static const PidGetVofa_t *pid_get_vofa;
 #define ROBO_INIT_TIME 10 // (秒)云台初始化时间
-fp32 a2;
 /*--------------------------------Internal functions---------------------------------------*/
 /**以下函数均不会被外部调用，请注意！**/
 /*----------------angle_solution--------------------*/
@@ -442,7 +441,8 @@ void GimbalConsole(void)
         // PITCH轴双环控制
         gimbal_direct.pitch.set.vel =GIMBAL_DIRECT_PITCH_DIRECTION*PID_calc(
             &gimbal_direct_pid.pitch_angle,
-            gimbal_direct.feedback_pos.pitch, // 当前IMU角度
+            // gimbal_direct.feedback_pos.pitch, // 当前IMU角度
+               -gimbal_direct.pitch.fdb.pos,
             gimbal_direct.reference.pitch);   // 目标IMU角度
 
         gimbal_direct.pitch.set.curr = PID_calc(&gimbal_direct_pid.pitch_velocity,

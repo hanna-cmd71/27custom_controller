@@ -7,7 +7,7 @@
         {
             "name": "无线DAP Debug",
             "cwd": "${workspaceFolder}",
-            "executable": "E:\\rm\\8\\standard-robot-pro\\MDK-ARM\\build\\Keil\\StandardRobotPro.elf", 
+            "executable": "E:\\rm\\8\\standard-robot-pro\\MDK-ARM\\build\\Keil\\StandardRobotPro.axf", 
             // 含有调试信息的可执行文件的路径，可以是 keil 生成的 .axf 文件 
             // 或者 ARM-GNU-toolchain 生成的 .elf 文件
             "request": "launch", // 启动类型，常用launch
@@ -34,7 +34,7 @@
         {
             "name": "STLink Debug",
             "cwd": "${workspaceFolder}",
-            "executable": "E:\\rm\\8\\standard-robot-pro\\MDK-ARM\\build\\Keil\\StandardRobotPro.elf", 
+            "executable": "E:\\rm\\engineer\\new_remoto\\MDK-ARM\\build\\Keil\\StandardRobotPro.axf", 
             // 含有调试信息的可执行文件的路径，可以是 keil 生成的 .axf 文件 
             // 或者 ARM-GNU-toolchain 生成的 .elf 文件
             "request": "launch", // 启动类型，常用launch
@@ -52,6 +52,11 @@
             "configFiles": [    
                 "interface/stlink.cfg",
                 "target/stm32f4x.cfg"
+            ],
+                       // 用 .hex 烧录，绕开 GNU gdb 对 Keil .elf 的 "RW_IRAM1 outside of ELF segments"
+            // 导致段被跳过、固件下载不完整的问题；.elf 仅用于提供调试符号
+            "loadFiles": [
+                "E:\\rm\\engineer\\remoto2\\standard-robot-pro\\MDK-ARM\\build\\Keil\\StandardRobotPro.hex"
             ],
             "liveWatch": {
                 "enabled": true,

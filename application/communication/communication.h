@@ -17,11 +17,10 @@ typedef struct
 {
     struct frame_header
     {
-        uint8_t sof;   // 数据帧起始字节，固定值为 0xA5
-        uint8_t len;   // 数据段长度
-        uint8_t id;    // 数据段id
-        uint8_t type;  // 数据段类型
-        uint8_t crc;   // 数据帧头的 CRC8 校验
+        uint8_t sof;               // 起始字节，固定值为0xA5
+        uint16_t data_length;      // 数据帧中data的长度
+        uint8_t seq;               // 包序号
+        uint8_t crc8;              // 帧头CRC8校验
     } __attribute__((packed)) frame_header;
 
     uint8_t data[DATA_LEN];
@@ -34,13 +33,36 @@ typedef struct {
     bool_t need_send;
 } CanSendBuffer_t;
 
-extern BoardCommunicateData_s BOARD_TX_DATA;
+typedef struct
+{
+    float pos[7];
+} CCControlData_t;
+extern CCControlData_t ControlData;
+
+typedef __packed struct
+{
+    __packed struct
+    {
+        uint8_t sof;               // 起始字节，固定值为0xA5
+        uint16_t data_length;      // 数据帧中data的长度
+        uint8_t seq;               // 包序号
+        uint8_t crc8;              // 帧头CRC8校验
+
+    } frame_header;                // 帧头
+    __packed uint16_t cmd_id;      // 命令码
+    __packed uint8_t data[45];     // 自定义控制器的数据帧
+    __packed uint16_t frame_tail;  // 帧尾CRC16校验
+} Controller_t;                    // 自定义控制器数据包
+
+extern Controller_t BOARD_TX_DATA;
 
 void SendRC(void);
 
 extern void SendInit(void);
 
-extern void DataPack(uint8_t * data, uint8_t data_lenth, uint8_t data_id);
+extern void uart_updata();
+
+extern void DataPack(uint8_t * data, uint16_t data_lenth, uint16_t data_id);
 
 extern void DataUnpack(void);
 

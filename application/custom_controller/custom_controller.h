@@ -5,7 +5,7 @@
 #include "struct_typedef.h"
 
 #define CUSTOM_CONTROLLER_TASK_INIT_TIME 100
-#define CUSTOM_CONTROLLER_CONTROL_TIME 1
+#define CUSTOM_CONTROLLER_CONTROL_TIME 1000
 #define CUSTOM_CONTROLLER_SEND_TIME 34  //30Hz = (1000/30)ms 向上取整
 
 typedef struct

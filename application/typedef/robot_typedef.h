@@ -6,9 +6,11 @@
 #define CHASSIS_NONE            0  // 无底盘
 #define CHASSIS_MECANUM_WHEEL   1  // 麦克纳姆轮底盘
 #define CHASSIS_OMNI_WHEEL      2  // 全向轮底盘
+#define CHASSIS_FOOT_WHEEL      3  // 全向轮底盘
+
 
 // 可用云台硬件类型
-#define GIMBAL_NONE                0  // 无云台
+#define CHASSIS_NONE                0  // 无云台
 #define GIMBAL_YAW_PITCH_DIRECT    1  // yaw-pitch电机直连云台
 #define GIMBAL_DOUBLE_YAW_PITCH    2  // 双yaw-pitch电机直连云台
 
@@ -39,7 +41,7 @@
 #define TUNING_CHASSIS_WHEEL    10
 #define TUNING_CHASSIS_FOLLOW   11
 #define aaa666   666
-
+#define TUNING_F00T             12
 
 //大yaw的运动模式
 #define deadline  0    //死区模式
