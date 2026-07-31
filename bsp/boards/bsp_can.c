@@ -1,5 +1,5 @@
 #include "bsp_can.h"
-
+HAL_StatusTypeDef a3;
 void can_filter_init(void)
 {
     CAN_FilterTypeDef can_filter_st;
@@ -32,6 +32,7 @@ void can_filter_init(void)
  */
 void CAN_SendTxMessage(CanCtrlData_s * can_ctrl_data)
 {
+    
     uint32_t send_mail_box;
     uint8_t cnt = 20;  // 重复检测次数
 
@@ -40,6 +41,7 @@ void CAN_SendTxMessage(CanCtrlData_s * can_ctrl_data)
     while (free_TxMailbox < 3 && cnt--) {                      // 等待空闲邮箱数达到3
         free_TxMailbox = HAL_CAN_GetTxMailboxesFreeLevel(can_ctrl_data->hcan);
     }
-    HAL_CAN_AddTxMessage(
+    a3=HAL_CAN_AddTxMessage(
         can_ctrl_data->hcan, &can_ctrl_data->tx_header, can_ctrl_data->tx_data, &send_mail_box);
+        
 }

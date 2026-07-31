@@ -529,6 +529,11 @@
               <FileType>1</FileType>
               <FilePath>../application/robot_cmd/PWM_cmd_servo.c</FilePath>
             </File>
+            <File>
+              <FileName>CAN_cmd_SBzdatou.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../application/robot_cmd/CAN_cmd_SBzdatou.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

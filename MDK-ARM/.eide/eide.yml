@@ -13,7 +13,8 @@ virtualFolder:
       folders:
         - name: MDK-ARM
           files:
-            - path: startup_stm32f407xx.s
+            - path: startup_stm32f407xx.asm
+            - path: startup_stm32f407xx.o
           folders: []
         - name: User
           files:
@@ -193,6 +194,7 @@ virtualFolder:
             - path: ../application/gimbal/gimbal_yaw_pitch_direct.c
             - path: ../application/gimbal/gimbal_virtual.c
             - path: ../application/gimbal/gimbal_double_yaw_pitch.c
+            - path: ../application/gimbal/controler_myself.c
           folders: []
         - name: IMU
           files:
@@ -255,6 +257,7 @@ virtualFolder:
             - path: ../application/robot_cmd/CAN_cmd_SupCap.c
             - path: ../application/robot_cmd/PWM_cmd_pump.c
             - path: ../application/robot_cmd/PWM_cmd_servo.c
+            - path: ../application/robot_cmd/CAN_cmd_SBzdatou.c
           folders: []
         - name: typedef
           files:

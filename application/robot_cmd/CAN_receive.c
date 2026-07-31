@@ -23,6 +23,7 @@
   */
 
 #include "CAN_receive.h"
+#include "CAN_cmd_SBzdatou.h"
 
 #include "bsp_can.h"
 #include "cmsis_os.h"
@@ -48,6 +49,9 @@ static LkMeasure_s CAN1_LK_MEASURE[LK_NUM];
 static LkMeasure_s CAN2_LK_MEASURE[LK_NUM];
 
 static SupCap_s SUP_CAP_MEASURE;
+
+ SBzdatouMeasure_s CAN1_SBZDATOU_MEASURE[6];
+static SBzdatouMeasure_s CAN2_SBZDATOU_MEASURE[6];
 
 static ChassisReference_t BOARD_COMMUNICATION_MEASURE;
 
@@ -289,6 +293,31 @@ static void CybergearRxDecode(Motor_s *p_motor, uint8_t rx_data[8])
 static void DecodeExtIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t rx_data[8])
 {
     uint8_t motor_id = 0;
+    switch (rx_header->ExtId)
+    {   
+    case SBZDATOU1_RX_EXT_ID:
+    case SBZDATOU2_RX_EXT_ID:
+    case SBZDATOU3_RX_EXT_ID:
+    case SBZDATOU4_RX_EXT_ID:
+    case SBZDATOU5_RX_EXT_ID:
+    case SBZDATOU6_RX_EXT_ID:
+    
+
+    {
+        static uint8_t i = 0;
+        // i = rx_header->ExtId >>2;
+        b1= rx_header->ExtId >>8;
+        if (CAN == &hcan1)
+        {
+            SBzdatouFdbData(&CAN1_SBZDATOU_MEASURE[b1], rx_header->ExtId, rx_data);
+        }
+        else if (CAN == &hcan2)
+        {
+            SBzdatouFdbData(&CAN2_SBZDATOU_MEASURE[i], rx_header->ExtId, rx_data);
+        }
+        return;
+    }
+}
     if (((RxCanInfo_s *)(&rx_header->ExtId))->communication_type == 2)
     { // 通信类型2
         motor_id = ((RxCanInfoType_2_s *)(&rx_header->ExtId))->motor_id;
@@ -370,6 +399,33 @@ static void GetDjiFdbData(Motor_s *p_motor, const DjiMotorMeasure_t *p_dji_motor
     p_motor->fdb.ecd = p_dji_motor_measure->ecd;
 }
 
+// /**
+//  * @brief          获取大头反馈数据
+//  * @param[out]     p_motor 电机结构体
+//  * @param[in]      p_sbzdatou_measure 大头反馈数据缓存区
+//  * @return         none
+//  */
+// static void GetSBzdatouFdbData(Motor_s *p_motor, const SBzdatouMeasure_s *p_sbzdatou_measure)
+// {
+//     uint8_t *rx_data = (uint8_t *)p_sbzdatou_measure->rx_data;
+
+//     p_motor->fdb.ecd = (uint16_t)(rx_data[0] << 8 | rx_data[1]);
+//     p_motor->fdb.vel = (float)((int16_t)(rx_data[2] << 8 | rx_data[3]));
+//     p_motor->fdb.curr = (float)((int16_t)(rx_data[4] << 8 | rx_data[5]));
+//     p_motor->fdb.tor = p_motor->fdb.curr;
+//     p_motor->fdb.temp = rx_data[6];
+//     p_motor->fdb.state = rx_data[7];
+
+//     if (HAL_GetTick() - p_sbzdatou_measure->last_fdb_time > MOTOR_STABLE_RUNNING_TIME)
+//     {
+//         p_motor->offline = true;
+//     }
+//     else
+//     {
+//         p_motor->offline = false;
+//     }
+// }
+
 /**
  * @brief          获取cybergear电机反馈数据
  * @param[out]     p_motor 电机结构体
@@ -449,6 +505,26 @@ static void GetLkFdbData(Motor_s *motor, const LkMeasure_s *lk_measure)
 }
 
 /**
+ * @brief          获取大头反馈数据
+ * @param[out]     motor 电机结构体
+ * @param[in]      lk_measure 电机反馈数据缓存区
+ * @return         none
+ */
+void GetDTFdbData(Motor_s *motor, const SBzdatouMeasure_s *DT_measure)
+{
+    motor->fdb.pos = uint_to_float(DT_measure->ecd, -M_PI, M_PI, 16);
+    uint32_t now = HAL_GetTick();
+    if (now - DT_measure->last_fdb_time > MOTOR_STABLE_RUNNING_TIME)
+    {
+        motor->offline = true;
+    }
+    else
+    {
+        motor->offline = false;
+    }
+}
+
+/**
  * @brief          获取接收数据
  * @param[out]     p_motor 电机结构体
  * @return         none
@@ -507,6 +583,15 @@ void GetMotorMeasure(Motor_s *p_motor)
             GetLkFdbData(p_motor, &CAN2_LK_MEASURE[p_motor->id - 1]);
         }
     }
+    case SBzdatou:
+    if (p_motor->can == 1)
+        {
+            GetLkFdbData(p_motor, &CAN1_LK_MEASURE[p_motor->id - 1]);
+        }
+        else
+        {
+            GetLkFdbData(p_motor, &CAN2_LK_MEASURE[p_motor->id - 1]);
+        }
     break;
     default:
         break;
@@ -535,6 +620,19 @@ void GetSupCapMeasure(SupCap_s *p_sup_cap)
 void GetBoardInfo(ChassisReference_t *board_communication)
 {
     memcpy(board_communication, &BOARD_COMMUNICATION_MEASURE, sizeof(ChassisReference_t));
+}
+
+const SBzdatouMeasure_s * GetSBzdatouMeasurePoint(uint8_t can)
+{
+    if (can == 1)
+    {
+        return &CAN1_SBZDATOU_MEASURE[0];
+    }
+    else if (can == 2)
+    {
+        return &CAN2_SBZDATOU_MEASURE[0];
+    }
+    return &CAN1_SBZDATOU_MEASURE[0];
 }
 
 /************************ END OF FILE ************************/

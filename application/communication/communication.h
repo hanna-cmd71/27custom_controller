@@ -50,7 +50,7 @@ typedef __packed struct
 
     } frame_header;                // 帧头
     __packed uint16_t cmd_id;      // 命令码
-    __packed uint8_t data[45];     // 自定义控制器的数据帧
+    __packed uint8_t data[30];     // 自定义控制器的数据帧
     __packed uint16_t frame_tail;  // 帧尾CRC16校验
 } Controller_t;                    // 自定义控制器数据包
 

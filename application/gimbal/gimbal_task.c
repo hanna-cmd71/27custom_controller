@@ -23,7 +23,7 @@
 #include "cmsis_os.h"
 #include "gimbal_yaw_pitch_direct.h"
 #include "usb_debug.h"
-
+#include "controler_myself.h"
 #ifndef GIMBAL_TASK_INIT_TIME
 #define GIMBAL_TASK_INIT_TIME 200
 #endif  // GIMBAL_TASK_INIT_TIME
@@ -34,7 +34,6 @@
 
 #if INCLUDE_uxTaskGetStackHighWaterMark
 uint32_t gimbal_high_water;
-int a1;
 #endif
 
 __weak void GimbalPublish(void);
@@ -73,7 +72,6 @@ void gimbal_task(void const * pvParameters)
         GimbalConsole();
         // 发送控制量
         GimbalSendCmd();
-        a1++;
         // 系统延时
         vTaskDelay(GIMBAL_CONTROL_TIME);
 
