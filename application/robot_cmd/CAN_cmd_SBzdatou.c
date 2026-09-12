@@ -50,6 +50,16 @@ void SBzdatou_torque_control(
     if (hcan == NULL)
         return;
     a2[0]++;
+
+    if (torque < 0)
+    {
+        torque = -torque;
+        direction = 0x00;
+    }
+    else
+    {
+        direction = 0x01;
+    }
     CAN_CTRL_DATA.tx_header.DLC = 8;
 
     CAN_CTRL_DATA.hcan = hcan;

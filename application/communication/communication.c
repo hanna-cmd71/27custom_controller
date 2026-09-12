@@ -291,7 +291,7 @@ void DataPack(uint8_t *data, uint16_t data_lenth, uint16_t data_id)
 {
     BOARD_TX_DATA.frame_header.sof = 0xA5;       // 数据帧起始字节，固定值为 0xA5
     BOARD_TX_DATA.frame_header.data_length = data_lenth; // 数据帧中数据段的长度
-    BOARD_TX_DATA.frame_header.seq = 0;           // 包序号
+    BOARD_TX_DATA.frame_header.seq ++;           // 包序号
     BOARD_TX_DATA.frame_header.crc8 = 0;          // 帧头CRC8校验
     BOARD_TX_DATA.cmd_id = data_id;                       // 数据段id
     // 添加帧头 CRC8 校验位

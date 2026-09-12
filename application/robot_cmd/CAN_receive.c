@@ -50,8 +50,8 @@ static LkMeasure_s CAN2_LK_MEASURE[LK_NUM];
 
 static SupCap_s SUP_CAP_MEASURE;
 
- SBzdatouMeasure_s CAN1_SBZDATOU_MEASURE[6];
-static SBzdatouMeasure_s CAN2_SBZDATOU_MEASURE[6];
+ SBzdatouMeasure_s CAN1_SBZDATOU_MEASURE[7];
+static SBzdatouMeasure_s CAN2_SBZDATOU_MEASURE[7];
 
 static ChassisReference_t BOARD_COMMUNICATION_MEASURE;
 
@@ -309,7 +309,7 @@ static void DecodeExtIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t
         b1= rx_header->ExtId >>8;
         if (CAN == &hcan1)
         {
-            SBzdatouFdbData(&CAN1_SBZDATOU_MEASURE[b1], rx_header->ExtId, rx_data);
+            SBzdatouFdbData(&CAN1_SBZDATOU_MEASURE[b1-1], rx_header->ExtId, rx_data);
         }
         else if (CAN == &hcan2)
         {
