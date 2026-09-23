@@ -52,9 +52,9 @@ float base_transform[4][4] = {
 DH_Param_t arm_dh_param[CONTROLLER_MYSELF_JOINT_NUM] = {
     /* 关节1 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -0.0f, .axis = {0.0f, 0.0f, 1.0f}},
     /* 关节2 */ {.a = 190.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.0f, .axis = {0.0f, -1.0f, 0.0f}},
-    /* 关节3 */ {.a = 87.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -0.0f, .axis = {0.0f, 1.0f, 0.0f}},
-    /* 关节4 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.0f, .axis = {1.0f, 0.0f, 0.0f}},
-    /* 关节5 */ {.a = 150.5f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -0.0f, .axis = {0.0f, 0.0f, -1.0f}},
+    /* 关节3 */ {.a = 87.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.127f, .axis = {0.0f, 1.0f, 0.0f}},
+    /* 关节4 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.5f, .axis = {1.0f, 0.0f, 0.0f}},
+    /* 关节5 */ {.a = 150.5f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -2.86f, .axis = {0.0f, 0.0f, -1.0f}},
     /* 关节6 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.0f, .axis = {1.0f, 0.0f, 0.0f}},
 };
 
@@ -396,8 +396,7 @@ void FK_Solve(const float joints[CONTROLLER_MYSELF_JOINT_NUM], FK_Result_t *resu
     // T_end = T_base * T1 * T2 * ... * T6
     for (uint8_t i = 0; i < CONTROLLER_MYSELF_JOINT_NUM; i++)
     {
-        const float theta = joints[i] + arm_dh_param[i].theta_offset;
-        DhTransform(&arm_dh_param[i], theta, link);
+        DhTransform(&arm_dh_param[i], joints[i], link);
         Mat4Mul(acc, link, tmp);
         memcpy(acc, tmp, sizeof(acc));
     }
@@ -431,8 +430,7 @@ void FK_SolveAll(const float joints[CONTROLLER_MYSELF_JOINT_NUM],
     // 每乘完一个关节，就记录该关节坐标系相对基座的位姿
     for (uint8_t i = 0; i < CONTROLLER_MYSELF_JOINT_NUM; i++)
     {
-        const float theta = joints[i] + arm_dh_param[i].theta_offset;
-        DhTransform(&arm_dh_param[i], theta, link);
+        DhTransform(&arm_dh_param[i], joints[i], link);
         Mat4Mul(acc, link, tmp);
         memcpy(acc, tmp, sizeof(acc));
         PoseFromMat(acc, &poses[i]);
@@ -538,8 +536,9 @@ void GimbalObserver(void)
     {
         const uint16_t ecd = measure[i].ecd;
         const uint32_t dt_ms = now - controller_myself.joint_last_feedback_time[i];
-        controller_myself.joint_feedback[i] = ((float)ecd / 65535.0f) * 2.0f * (float)M_PI;
-        controller_myself.joint_feedback[i] = WrapAngle(controller_myself.joint_feedback[i]);
+        controller_myself.joint_feedback[i] =
+            WrapAngle(((float)ecd / 65535.0f) * 2.0f * (float)M_PI -
+                      arm_dh_param[i].theta_offset);
 
         if (controller_myself.joint_feedback_valid[i] && dt_ms > 0U)
         {
@@ -587,9 +586,9 @@ void GimbalReference(void)
  */
 void GimbalConsole(void)
 {
+datouctrl[4]=sin(controller_myself.joint_feedback[3])*sin(controller_myself.joint_feedback[4])*2100;
+datouctrl[2]=sin(controller_myself.joint_feedback[2])*-1800;
 
-
-    
 }
 
 /*-------------------- Cmd --------------------*/

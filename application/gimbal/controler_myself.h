@@ -127,7 +127,7 @@ typedef struct
     Motor_s yaw, pitch;
     /* 六轴SB大头关节控制数据，索引0~5对应扩展ID 0x100~0x600。 */
     float joint_reference[CONTROLLER_MYSELF_JOINT_NUM];
-    float joint_feedback[CONTROLLER_MYSELF_JOINT_NUM];
+    float joint_feedback[CONTROLLER_MYSELF_JOINT_NUM];  // 当前关节角 (rad)，已含 DH 零位偏置 theta_offset
     float joint_velocity[CONTROLLER_MYSELF_JOINT_NUM];
     int32_t joint_torque[CONTROLLER_MYSELF_JOINT_NUM];
     uint8_t joint_direction[CONTROLLER_MYSELF_JOINT_NUM];
