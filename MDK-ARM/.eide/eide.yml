@@ -258,6 +258,7 @@ virtualFolder:
             - path: ../application/robot_cmd/PWM_cmd_pump.c
             - path: ../application/robot_cmd/PWM_cmd_servo.c
             - path: ../application/robot_cmd/CAN_cmd_SBzdatou.c
+            - path: ../application/robot_cmd/CAN_cmd_robostride.c
           folders: []
         - name: typedef
           files:

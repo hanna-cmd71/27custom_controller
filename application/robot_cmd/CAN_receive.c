@@ -24,6 +24,7 @@
 
 #include "CAN_receive.h"
 #include "CAN_cmd_SBzdatou.h"
+#include "CAN_cmd_robostride.h"
 
 #include "bsp_can.h"
 #include "cmsis_os.h"
@@ -52,6 +53,9 @@ static SupCap_s SUP_CAP_MEASURE;
 
  SBzdatouMeasure_s CAN1_SBZDATOU_MEASURE[7];
 static SBzdatouMeasure_s CAN2_SBZDATOU_MEASURE[7];
+
+ RobostrideMeasure_s CAN1_ROBOSTRIDE_MEASURE[7];
+static RobostrideMeasure_s CAN2_ROBOSTRIDE_MEASURE[7];
 
 static ChassisReference_t BOARD_COMMUNICATION_MEASURE;
 
@@ -245,6 +249,24 @@ static void DecodeStdIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t
     if (rx_header->StdId == 0x20c)
     {
         SupCapFdbData(&SUP_CAP_MEASURE, rx_data);
+        return;
+    }
+
+    // RobStride电机MIT反馈帧解码（应答指令1，StdId为主机id，Byte0为电机CAN_ID）
+    if (rx_header->StdId == ROBOSTRIDE_MASTER_ID)
+    {
+        uint8_t i = rx_data[0];
+        if (i >= 1 && i <= 6)
+        {
+            if (CAN == &hcan1)
+            {
+                RobostrideFdbData(&CAN1_ROBOSTRIDE_MEASURE[5], rx_data);
+            }
+            else if (CAN == &hcan2)
+            {
+                RobostrideFdbData(&CAN2_ROBOSTRIDE_MEASURE[5], rx_data);
+            }
+        }
         return;
     }
 
@@ -633,6 +655,19 @@ const SBzdatouMeasure_s * GetSBzdatouMeasurePoint(uint8_t can)
         return &CAN2_SBZDATOU_MEASURE[0];
     }
     return &CAN1_SBZDATOU_MEASURE[0];
+}
+
+const RobostrideMeasure_s * GetRobostrideMeasurePoint(uint8_t can)
+{
+    if (can == 1)
+    {
+        return &CAN1_ROBOSTRIDE_MEASURE[5];
+    }
+    else if (can == 2)
+    {
+        return &CAN2_ROBOSTRIDE_MEASURE[5];
+    }
+    return &CAN1_ROBOSTRIDE_MEASURE[0];
 }
 
 /************************ END OF FILE ************************/

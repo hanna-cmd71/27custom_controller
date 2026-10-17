@@ -20,14 +20,14 @@
 #include "CAN_receive.h"
 #include "detect_task.h"
 #include "string.h"
-
+#include "CAN_cmd_robostride.h"
 /*-------------------- Global var --------------------*/
 
 Gimbal_s controller_myself;
 Gimbal_PID_t controller_myself_pid;
 FK_Result_t controller_myself_fk;                    // 正解结果（末端位姿，= joint_pose[5]）
 FK_Result_t joint_pose[CONTROLLER_MYSELF_JOINT_NUM]; // 每个关节坐标系相对基座的位姿
-
+fp32 robostride_datouctrl;
 /**
  * @brief 基座安装变换矩阵：机械臂基座相对世界坐标系的姿态
  * @note  正解从这里起乘（而非单位阵），用于修正基座实际安装方向。
@@ -50,15 +50,18 @@ float base_transform[4][4] = {
  *          .theta_offset = 关节零位偏置(rad)
  */
 DH_Param_t arm_dh_param[CONTROLLER_MYSELF_JOINT_NUM] = {
-    /* 关节1 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -0.0f, .axis = {0.0f, 0.0f, 1.0f}},
-    /* 关节2 */ {.a = 190.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.0f, .axis = {0.0f, -1.0f, 0.0f}},
-    /* 关节3 */ {.a = 87.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.127f, .axis = {0.0f, 1.0f, 0.0f}},
-    /* 关节4 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.5f, .axis = {1.0f, 0.0f, 0.0f}},
-    /* 关节5 */ {.a = 150.5f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -2.86f, .axis = {0.0f, 0.0f, -1.0f}},
+    /* 关节1 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -3.14f, .axis = {0.0f, 0.0f, 1.0f}},
+    /* 关节2 */ {.a = 190.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -2.64f, .axis = {0.0f, -1.0f, 0.0f}},
+    /* 关节3 */ {.a = 87.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = -0.62f, .axis = {0.0f, 1.0f, 0.0f}},
+    /* 关节4 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.55f, .axis = {1.0f, 0.0f, 0.0f}},
+
+    /* 关节5 */ {.a = 150.5f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.2f, .axis = {0.0f, 0.0f, -1.0f}},
     /* 关节6 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .theta_offset = 0.0f, .axis = {1.0f, 0.0f, 0.0f}},
 };
 
-int a1;
+double a1[6];
+double a2[6];
+
 int datouctrl[6];
 int sendctrl;
 SBzdatouMeasure_s *SBzdatouMeasure;
@@ -488,6 +491,18 @@ float GetJointVelocity(uint8_t index)
     return controller_myself.joint_velocity[index];
 }
 
+/**
+ * @brief          获取全部关节角度数组指针 (rad)
+ * @note           返回 joint_feedback 首地址，长度 CONTROLLER_MYSELF_JOINT_NUM，
+ *                 指向实时更新的数据，外部只读、不要缓存指针指向的副本。
+ * @param[in]      none
+ * @retval         const float* 关节角度数组指针，index 0~5 对应关节1~6
+ */
+const float *GetGimbalJointFeedbackPoint(void)
+{
+    return controller_myself.joint_feedback;
+}
+
 /*-------------------- Init --------------------*/
 
 /**
@@ -501,6 +516,7 @@ void GimbalInit(void)
     memset(&controller_myself, 0, sizeof(controller_myself));
     controller_myself.rc = get_remote_control_point();
     memcpy(controller_myself.joint_direction, direction, sizeof(direction));
+    Robostride_enable(1, 0x5);
 
     for (uint8_t i = 0; i < CONTROLLER_MYSELF_JOINT_NUM; i++)
     {
@@ -535,6 +551,7 @@ void GimbalObserver(void)
     for (uint8_t i = 0; i < CONTROLLER_MYSELF_JOINT_NUM; i++)
     {
         const uint16_t ecd = measure[i].ecd;
+
         const uint32_t dt_ms = now - controller_myself.joint_last_feedback_time[i];
         controller_myself.joint_feedback[i] =
             WrapAngle(((float)ecd / 65535.0f) * 2.0f * (float)M_PI -
@@ -560,7 +577,13 @@ void GimbalObserver(void)
         controller_myself.joint_last_feedback_time[i] = measure[i - 1].last_fdb_time;
         controller_myself.joint_feedback_valid[i] = (measure[i - 1].last_fdb_time != 0U);
     }
-
+    // 关节2（Robostride 0x05）：反馈来自 Robostride，覆盖上面循环写入的编码器值
+    const RobostrideMeasure_s *robostride = GetRobostrideMeasurePoint(1);
+    controller_myself.joint_feedback[1] =
+        WrapAngle(robostride->pos - arm_dh_param[1].theta_offset);
+    controller_myself.joint_velocity[1] = robostride->vel;
+    controller_myself.joint_last_feedback_time[1] = robostride->last_fdb_time;
+    controller_myself.joint_feedback_valid[1] = (robostride->last_fdb_time != 0U);
     // 关节角更新完毕后计算正运动学：每个关节位姿 + 末端位姿
     FK_SolveAll(controller_myself.joint_feedback, joint_pose);
     controller_myself_fk = joint_pose[CONTROLLER_MYSELF_JOINT_NUM - 1];
@@ -586,9 +609,43 @@ void GimbalReference(void)
  */
 void GimbalConsole(void)
 {
-datouctrl[4]=sin(controller_myself.joint_feedback[3])*sin(controller_myself.joint_feedback[4])*2100;
-datouctrl[2]=sin(controller_myself.joint_feedback[2])*-1800;
+    // // a2[0] = -sin(controller_myself.joint_feedback[3]) * controller_myself.joint_feedback[4];
+    // // a2[1] = controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1];
+    // // a2[2] =cos(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1])*sin(controller_myself.joint_feedback[3]);
 
+
+    // a2[3] = cos(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) * controller_myself.joint_feedback[3];
+    // a2[0] = sqrtf(sin(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) * sin(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) +
+    //               sin(a2[3]) * sin(a2[3]));
+    // // a2[1] = atanf(sin(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) / sin(a2[3]));
+    // a2[1] =atan2f(sin(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]), sin(a2[3]));
+    // a2[2] = cos(a2[1] - controller_myself.joint_feedback[4]) * a2[0] * -2200;
+    // datouctrl[4] = a2[2];
+
+    // // datouctrl[4] = cos(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1])*sin(controller_myself.joint_feedback[3]) * -2200 *
+    // //                cos(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1] +
+    // //                    sin(controller_myself.joint_feedback[3]) * controller_myself.joint_feedback[4]);
+    // // datouctrl[4] = sin(controller_myself.joint_feedback[3]) * cos(controller_myself.joint_feedback[4] + controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) * -1800;
+    // datouctrl[3] = cos(controller_myself.joint_feedback[3]) * -2100 * sin(controller_myself.joint_feedback[4]) * cos(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]);
+    // // datouctrl[3] = controller_myself.joint_feedback[3] * 600;
+    // // datouctrl[4] = sin(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) * sin(controller_myself.joint_feedback[4]) * -2200;
+    // datouctrl[2] = cos(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) * (1890 + cos(controller_myself.joint_feedback[4]) * 600) - 300;
+    // if (controller_myself.joint_feedback[1] > -1.54)
+    // {
+    //     a1[0] = cos(controller_myself.joint_feedback[1]);
+    //     a1[1] = sin(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) * 0.5 - 0.7;
+    //     a1[2] = a1[0] * a1[1];
+    //     a1[3] = (double)datouctrl[2] / 8000;
+    //     a1[4] = a1[2] + a1[3];
+    //     robostride_datouctrl = a1[4];
+    //     // robostride_datouctrl = cos(controller_myself.joint_feedback[2]-controller_myself.joint_feedback[1]) * -0.7 +
+    //     //                        sin(controller_myself.joint_feedback[2]-controller_myself.joint_feedback[1]) * 0.4;
+    // }
+    // else
+    // {
+    //     // robostride_datouctrl = cos(controller_myself.joint_feedback[1]) * -1.4 +
+    //     //                        cos(controller_myself.joint_feedback[1]) *sin(controller_myself.joint_feedback[2] - controller_myself.joint_feedback[1]) * 0.4;
+    // }
 }
 
 /*-------------------- Cmd --------------------*/
@@ -604,7 +661,10 @@ void GimbalSendCmd(void)
     {
 
         SBzdatou_torque_control(1, 0x100, 0x01, datouctrl[0]);
-        SBzdatou_torque_control(1, 0x200, 0x01, datouctrl[1]);
+        Robostride_mit_control(1, 0x5, 0, 0, 0, 0, robostride_datouctrl);
+        // Robostride_mit_control(1, 0x5, 0, 0, 0, 0, datouctrl[1]);
+
+        // SBzdatou_torque_control(1, 0x200, 0x01, datouctrl[1]);
 
         sendctrl = 1;
     }

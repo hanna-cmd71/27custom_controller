@@ -28,13 +28,14 @@
 #include "remote_control.h"
 #include "detect_task.h"
 #include "IMU.h" //陀螺仪文件
+#include "controler_myself.h"
 
 #define USART_RX_BUF_LENGHT 512
 #define USART1_FIFO_BUF_LENGTH 1024
 
 // send data
 Controller_t BOARD_TX_DATA;
-static const PidGetVofa_t *pid_get_vofa;
+// static const PidGetVofa_t *pid_get_vofa;
 // 全局CAN发送缓冲区
 static CanSendBuffer_t can_buffers[2][2] = {0}; // [CAN总线][标准ID类型]
 // can_buffers[0][0] = CAN1 0x200 (ID 1-4)
@@ -269,14 +270,13 @@ void USART1_IRQHandler(void)
 
 void uart_updata()
 {
-    pid_get_vofa= Subscribe(PID_GET_VOFA_NAME);
-    ControlData.pos[0] = GetImuAngle(AX_PITCH);
-    ControlData.pos[1] = GetImuAngle(AX_YAW);
-    ControlData.pos[2] = GetImuAngle(AX_ROLL);
-    ControlData.pos[3] = pid_get_vofa->angle_kd;
-    ControlData.pos[4] = pid_get_vofa->angle_ki;
-    ControlData.pos[5] = pid_get_vofa->angle_kp;
-
+    const float *joint_feedback = GetGimbalJointFeedbackPoint();
+    for (uint8_t i = 0; i < CONTROLLER_MYSELF_JOINT_NUM; i++)
+    {
+        ControlData.pos[i] = joint_feedback[i];
+    }
+// ControlData.pos[1]=-ControlData.pos[1];
+// ControlData.pos[2]=-ControlData.pos[2];
 
     DataPack((uint8_t *)&ControlData, (uint16_t)30, 0x0302);
 }

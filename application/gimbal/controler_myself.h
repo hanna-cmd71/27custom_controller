@@ -221,6 +221,13 @@ extern float GetJointAngle(uint8_t index);
  */
 extern float GetJointVelocity(uint8_t index);
 
+/**
+ * @brief          获取全部关节角度数组指针 (rad)
+ * @param[in]      none
+ * @retval         const float* joint_feedback 数组首地址，index 0~5 对应关节1~6
+ */
+extern const float *GetGimbalJointFeedbackPoint(void);
+
 #endif  // CONTROLER_MYSELF_H
 
 /************************ END OF FILE ************************/

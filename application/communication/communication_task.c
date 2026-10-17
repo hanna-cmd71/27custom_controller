@@ -8,25 +8,30 @@ uint32_t communication_high_water;
 #endif
 // 任务相关时间
 #define COMMUNICATION_TASK_INIT_TIME 100
-#define COMMUNICATION_TASK_TIME_MS 50
+#define COMMUNICATION_TASK_TIME_MS 100
 
-void communication_task(void const * pvParameters)
+void communication_task(void const *pvParameters)
 {
     SendInit();
     // 空闲一段时间
     vTaskDelay(COMMUNICATION_TASK_INIT_TIME);
-    while (1) {
+    while (1)
+    {
         // can发送
         SendRC();
 
         // 统一发送所有CAN命令
         CanManagerSendAll();
 
-        //uart1发送
+        // uart1发送
         uart_updata();
         // UartSendTxMessage(&huart1, (uint8_t *)(&ControlData), sizeof(ControlData), 100);
 
         UartSendTxMessage(&huart1, (uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA), 100);
+                vTaskDelay(30);
+
+        UartSendTxMessage(&huart6, (uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA), 100);
+
         DataUnpack();
 
         // 系统延时
@@ -40,21 +45,20 @@ void communication_task(void const * pvParameters)
 
 __weak void SendInit()
 {
-    /* 
+    /*
      NOTE : 在其他文件中定义具体内容
     */
 }
-__weak void SendRC()  
+__weak void SendRC()
 {
-     /* 
-     NOTE : 在其他文件中定义具体内容
-    */
+    /*
+    NOTE : 在其他文件中定义具体内容
+   */
 }
-
 
 __weak void CanManagerSendAll()
 {
-     /* 
-     NOTE : 在其他文件中定义具体内容
-    */
+    /*
+    NOTE : 在其他文件中定义具体内容
+   */
 }

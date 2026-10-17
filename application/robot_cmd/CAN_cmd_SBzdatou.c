@@ -7,7 +7,6 @@ static CanCtrlData_s CAN_CTRL_DATA = {
     .tx_header.RTR = CAN_RTR_DATA,
 
 };
-int a2[5];
 HAL_StatusTypeDef a4;
 
 void SBzdatou_ecd_get(uint8_t can, uint32_t ext_id)
@@ -49,7 +48,6 @@ void SBzdatou_torque_control(
         hcan = &hcan2;
     if (hcan == NULL)
         return;
-    a2[0]++;
 
     if (torque < 0)
     {
@@ -74,8 +72,6 @@ void SBzdatou_torque_control(
     CAN_CTRL_DATA.tx_data[5] = (uint8_t)torque;
     CAN_CTRL_DATA.tx_data[6] = 0x00;
     CAN_CTRL_DATA.tx_data[7] = 0x6b;
-    a2[3] = CAN_CTRL_DATA.tx_data[7];
-
     CAN_SendTxMessage(&CAN_CTRL_DATA);
 }
 
