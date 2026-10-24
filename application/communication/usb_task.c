@@ -19,29 +19,16 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include "gimbal_double_yaw_pitch.h"
-#include "chassis_foot.h"
 
 #include "CRC8_CRC16.h"
 #include "cmsis_os.h"
+#include "custom_controller.h"
 #include "data_exchange.h"
 #include "macro_typedef.h"
-#include "usb_debug.h"
 #include "usb_device.h"
 #include "usb_typdef.h"
 #include "usbd_cdc_if.h"
 #include "usbd_conf.h"
-#include "supervisory_computer_cmd.h"
-#include "gimbal.h"
-#include "gimbal_double_yaw_pitch.h"
-#include "gimbal_yaw_pitch_direct.h"
-#include "gimbal_virtual.h"
-#include "shoot.h"
-#include "shoot_fric_trigger.h"
-#include "water_shot.h"
-#include "chassis_omni.h"
-#include "chassis.h"
-
 #if INCLUDE_uxTaskGetStackHighWaterMark
 uint32_t usb_high_water;
 #endif
@@ -61,9 +48,9 @@ uint32_t usb_high_water;
 #define CheckDurationAndSend(send_name)                                                \
     do                                                                                 \
     {                                                                                  \
-        if ((HAL_GetTick() - LAST_SEND_TIME.##send_name) >= SEND_DURATION_##send_name) \
+        if ((HAL_GetTick() - LAST_SEND_TIME.send_name) >= SEND_DURATION_##send_name)   \
         {                                                                              \
-            LAST_SEND_TIME.##send_name = HAL_GetTick();                                \
+            LAST_SEND_TIME.send_name = HAL_GetTick();                                  \
             UsbSend##send_name##Data();                                                \
         }                                                                              \
     } while (0)
@@ -72,9 +59,6 @@ uint32_t usb_high_water;
 static uint8_t USB_RX_BUF[USB_RX_DATA_SIZE];
 
 static const Imu_t *IMU;
-static __used const Gimbal_PID_t *GIMBAL_PID;
-static __used const Shoot_s *SHOOT;
-static __used const Chassis_PID_t *CHASSIS_PID;
 
 // 判断USB连接状态用到的一些变量
 static bool USB_OFFLINE = true;
@@ -177,10 +161,7 @@ void usb_task(void const *argument)
 static void UsbInit(void)
 {
     // 订阅数据
-    IMU = Subscribe(IMU_NAME);               // 获取IMU数据指针
-    GIMBAL_PID = Subscribe(GIMBAL_PID_NAME); // 获取云台PID数据指针
-    SHOOT = Subscribe(SHOOT_NAME);           // 获取射击数据指针
-    CHASSIS_PID = Subscribe(CHASSIS_PID_NAME);
+    IMU = Subscribe(IMU_NAME); // 获取IMU数据指针
 
     // 数据置零
     memset(&LAST_SEND_TIME, 0, sizeof(LastSendTime_t));
@@ -416,159 +397,15 @@ static void UsbSendRobotStateInfoData(void)
 static void UsbSendPidtoVofaData(void)
 {
 
-#if(__TUNING_MODE == TUNING_GIMBAL_PITCH)
-        SEND_DATA_PID_TUNING.data[0] = GIMBAL_PID->pitch_angle.set;
-        SEND_DATA_PID_TUNING.data[1] = GIMBAL_PID->pitch_angle.fdb;
-
-        SEND_DATA_PID_TUNING.data[2] = GIMBAL_PID->pitch_angle.out;
-        SEND_DATA_PID_TUNING.data[3] = GIMBAL_PID->pitch_angle.Pout;
-        SEND_DATA_PID_TUNING.data[4] = GIMBAL_PID->pitch_angle.Iout;
-        SEND_DATA_PID_TUNING.data[5] = GIMBAL_PID->pitch_angle.Dout;
-
-        SEND_DATA_PID_TUNING.data[6] = GIMBAL_PID->pitch_velocity.set;
-        SEND_DATA_PID_TUNING.data[7] = GIMBAL_PID->pitch_velocity.fdb;
-
-        SEND_DATA_PID_TUNING.data[8] = GIMBAL_PID->pitch_velocity.out;
-        SEND_DATA_PID_TUNING.data[9] = GIMBAL_PID->pitch_velocity.Pout;
-        SEND_DATA_PID_TUNING.data[10] = GIMBAL_PID->pitch_velocity.Iout;
-        SEND_DATA_PID_TUNING.data[11] = GIMBAL_PID->pitch_velocity.Dout;
-#elif(__TUNING_MODE == TUNING_GIMBAL_YAW)
-        SEND_DATA_PID_TUNING.data[0] = GIMBAL_PID->yaw_angle.set;
-        SEND_DATA_PID_TUNING.data[1] = GIMBAL_PID->yaw_angle.fdb;
-
-        SEND_DATA_PID_TUNING.data[2] = GIMBAL_PID->yaw_angle.out;
-        SEND_DATA_PID_TUNING.data[3] = GIMBAL_PID->yaw_angle.Pout;
-        SEND_DATA_PID_TUNING.data[4] = GIMBAL_PID->yaw_angle.Iout;
-        SEND_DATA_PID_TUNING.data[5] = GIMBAL_PID->yaw_angle.Dout;
-
-        SEND_DATA_PID_TUNING.data[6] = GIMBAL_PID->yaw_velocity.set;
-        SEND_DATA_PID_TUNING.data[7] = GIMBAL_PID->yaw_velocity.fdb;
-
-        SEND_DATA_PID_TUNING.data[8] = GIMBAL_PID->yaw_velocity.out;
-        SEND_DATA_PID_TUNING.data[9] = GIMBAL_PID->yaw_velocity.Pout;
-        SEND_DATA_PID_TUNING.data[10] = GIMBAL_PID->yaw_velocity.Iout;
-        SEND_DATA_PID_TUNING.data[11] = GIMBAL_PID->yaw_velocity.Dout;
-#elif(__TUNING_MODE == TUNING_GIMBAL_YAW_BA)
-        SEND_DATA_PID_TUNING.data[0] = GIMBAL_PID->yaw_ba_angle.set;
-        SEND_DATA_PID_TUNING.data[1] = GIMBAL_PID->yaw_ba_angle.fdb;
-
-        SEND_DATA_PID_TUNING.data[2] = GIMBAL_PID->yaw_ba_angle.out;
-        SEND_DATA_PID_TUNING.data[3] = GIMBAL_PID->yaw_ba_angle.Pout;
-        SEND_DATA_PID_TUNING.data[4] = GIMBAL_PID->yaw_ba_angle.Iout;
-        SEND_DATA_PID_TUNING.data[5] = GIMBAL_PID->yaw_ba_angle.Dout;
-
-        SEND_DATA_PID_TUNING.data[6] = GIMBAL_PID->yaw_ba_velocity.set;
-        SEND_DATA_PID_TUNING.data[7] = GIMBAL_PID->yaw_ba_velocity.fdb;
-
-        SEND_DATA_PID_TUNING.data[8] = GIMBAL_PID->yaw_ba_velocity.out;
-        SEND_DATA_PID_TUNING.data[9] = GIMBAL_PID->yaw_ba_velocity.Pout;
-        SEND_DATA_PID_TUNING.data[10] = GIMBAL_PID->yaw_ba_velocity.Iout;
-        SEND_DATA_PID_TUNING.data[11] = GIMBAL_PID->yaw_ba_velocity.Dout;
-#elif(__TUNING_MODE == TUNING_GIMBAL_YAW_UP)
-        SEND_DATA_PID_TUNING.data[0] = GIMBAL_PID->yaw_up_angle.set;
-        SEND_DATA_PID_TUNING.data[1] = GIMBAL_PID->yaw_up_angle.fdb;
-
-        SEND_DATA_PID_TUNING.data[2] = GIMBAL_PID->yaw_up_angle.out;
-        SEND_DATA_PID_TUNING.data[3] = GIMBAL_PID->yaw_up_angle.Pout;
-        SEND_DATA_PID_TUNING.data[4] = GIMBAL_PID->yaw_up_angle.Iout;
-        SEND_DATA_PID_TUNING.data[5] = GIMBAL_PID->yaw_up_angle.Dout;
-
-        SEND_DATA_PID_TUNING.data[6] = GIMBAL_PID->yaw_up_velocity.set;
-        SEND_DATA_PID_TUNING.data[7] = GIMBAL_PID->yaw_up_velocity.fdb;
-
-        SEND_DATA_PID_TUNING.data[8] = GIMBAL_PID->yaw_up_velocity.out;
-        SEND_DATA_PID_TUNING.data[9] = GIMBAL_PID->yaw_up_velocity.Pout;
-        SEND_DATA_PID_TUNING.data[10] = GIMBAL_PID->yaw_up_velocity.Iout;
-        SEND_DATA_PID_TUNING.data[11] = GIMBAL_PID->yaw_up_velocity.Dout;
-#elif(__TUNING_MODE == TUNING_SHOOT_FIRC)
-        SEND_DATA_PID_TUNING.data[0] = SHOOT->fric_pid[0].fdb * FRIC_MOTOR_R_DIRECTION;
-        SEND_DATA_PID_TUNING.data[1] = SHOOT->fric_pid[1].fdb * FRIC_MOTOR_L_DIRECTION;
-        SEND_DATA_PID_TUNING.data[2] = SHOOT->fric_pid[2].fdb * FRIC_MOTOR_U_DIRECTION;
-        
-        SEND_DATA_PID_TUNING.data[3] = SHOOT->fric_pid[0].set * FRIC_MOTOR_R_DIRECTION;
-        SEND_DATA_PID_TUNING.data[4] = SHOOT->fric_pid[1].set * FRIC_MOTOR_L_DIRECTION;
-        SEND_DATA_PID_TUNING.data[5] = SHOOT->fric_pid[2].set * FRIC_MOTOR_U_DIRECTION;
-
-        SEND_DATA_PID_TUNING.data[6] = 0;
-        SEND_DATA_PID_TUNING.data[7] = 0;
-        SEND_DATA_PID_TUNING.data[8] = 0;
-        SEND_DATA_PID_TUNING.data[9] = 0;
-        SEND_DATA_PID_TUNING.data[10] = 0;
-        SEND_DATA_PID_TUNING.data[11] = 0;
-#elif(__TUNING_MODE == TUNING_SHOOT_TRIGGER)
-        SEND_DATA_PID_TUNING.data[0] = SHOOT->trigger_angel_pid.set;
-        SEND_DATA_PID_TUNING.data[1] = SHOOT->trigger_angel_pid.fdb;
-
-        SEND_DATA_PID_TUNING.data[2] = SHOOT->trigger_angel_pid.out;
-        SEND_DATA_PID_TUNING.data[3] = SHOOT->trigger_angel_pid.Pout;
-        SEND_DATA_PID_TUNING.data[4] = SHOOT->trigger_angel_pid.Iout;
-        SEND_DATA_PID_TUNING.data[5] = SHOOT->trigger_angel_pid.Dout;
-
-        SEND_DATA_PID_TUNING.data[6] = SHOOT->trigger_speed_pid.set;
-        SEND_DATA_PID_TUNING.data[7] = SHOOT->trigger_speed_pid.fdb;
-        SEND_DATA_PID_TUNING.data[8] = SHOOT->trigger_speed_pid.out;
-
-        SEND_DATA_PID_TUNING.data[9] = SHOOT->trigger_speed_pid.Pout;
-        SEND_DATA_PID_TUNING.data[10] = SHOOT->trigger_speed_pid.Iout;
-        SEND_DATA_PID_TUNING.data[11] = SHOOT->trigger_speed_pid.Dout;
-#elif(__TUNING_MODE == TUNING_CHASSIS_WHEEL)
-        SEND_DATA_PID_TUNING.data[0] = 0;
-        SEND_DATA_PID_TUNING.data[1] = 0;
-        SEND_DATA_PID_TUNING.data[2] = 0;
-        SEND_DATA_PID_TUNING.data[3] = 0;
-        SEND_DATA_PID_TUNING.data[4] = 0;
-        SEND_DATA_PID_TUNING.data[5] = 0;
-
-        SEND_DATA_PID_TUNING.data[6] = CHASSIS_PID->wheel_velocity[0].set;
-        SEND_DATA_PID_TUNING.data[7] = CHASSIS_PID->wheel_velocity[0].fdb;
-
-        SEND_DATA_PID_TUNING.data[8] = CHASSIS_PID->wheel_velocity[0].out;
-        SEND_DATA_PID_TUNING.data[9] = CHASSIS_PID->wheel_velocity[0].Pout;
-        SEND_DATA_PID_TUNING.data[10] = CHASSIS_PID->wheel_velocity[0].Iout;
-        SEND_DATA_PID_TUNING.data[11] = CHASSIS_PID->wheel_velocity[0].Dout;
-#elif(__TUNING_MODE == TUNING_CHASSIS_FOLLOW)
-        SEND_DATA_PID_TUNING.data[0] = 0;
-        SEND_DATA_PID_TUNING.data[1] = 0;
-        SEND_DATA_PID_TUNING.data[2] = 0;
-        SEND_DATA_PID_TUNING.data[3] = 0;
-        SEND_DATA_PID_TUNING.data[4] = 0;
-        SEND_DATA_PID_TUNING.data[5] = 0;
-
-        SEND_DATA_PID_TUNING.data[6] = CHASSIS_PID->follow.set;
-        SEND_DATA_PID_TUNING.data[7] = CHASSIS_PID->follow.fdb;
-
-        SEND_DATA_PID_TUNING.data[8] = CHASSIS_PID->follow.out;
-        SEND_DATA_PID_TUNING.data[9] = CHASSIS_PID->follow.Pout;
-        SEND_DATA_PID_TUNING.data[10] = CHASSIS_PID->follow.Iout;
-        SEND_DATA_PID_TUNING.data[11] = CHASSIS_PID->follow.Dout;
-#elif(__TUNING_MODE == 666)     
-        SEND_DATA_PID_TUNING.data[0] = yaw_angle_get(0);
-        SEND_DATA_PID_TUNING.data[1] = yaw_angle_get(1);
-        SEND_DATA_PID_TUNING.data[2] = yaw_angle_get(2);
-        SEND_DATA_PID_TUNING.data[3] = yaw_angle_get(3);
-        SEND_DATA_PID_TUNING.data[4] = yaw_angle_get(4);
-        SEND_DATA_PID_TUNING.data[5] = yaw_angle_get(5);
-        SEND_DATA_PID_TUNING.data[6] = yaw_angle_get(6);
-        SEND_DATA_PID_TUNING.data[7] = yaw_angle_get(7);
-        SEND_DATA_PID_TUNING.data[8] = yaw_angle_get(8);
-        SEND_DATA_PID_TUNING.data[9] = yaw_angle_get(9);
-        SEND_DATA_PID_TUNING.data[10] = yaw_angle_get(10);
-        SEND_DATA_PID_TUNING.data[11] = yaw_angle_get(11);
-#elif(__TUNING_MODE == 12)     
-        SEND_DATA_PID_TUNING.data[0] =0xffffffff;
-        // SEND_DATA_PID_TUNING.data[1] = chassis_get(1);
-        // SEND_DATA_PID_TUNING.data[2] = chassis_get(2);
-        // SEND_DATA_PID_TUNING.data[3] = chassis_get(3);
-        // SEND_DATA_PID_TUNING.data[4] = chassis_get(4);
-        // SEND_DATA_PID_TUNING.data[5] = chassis_get(5);
-        // SEND_DATA_PID_TUNING.data[6] = chassis_get(6);
-        // SEND_DATA_PID_TUNING.data[7] = chassis_get(7);
-        // SEND_DATA_PID_TUNING.data[8] = chassis_get(8);
-        // SEND_DATA_PID_TUNING.data[9] = chassis_get(9);
-        // SEND_DATA_PID_TUNING.data[10] = chassis_get(10);
-        // SEND_DATA_PID_TUNING.data[11] = chassis_get(11);
-
-#endif
+    /* 自定义控制器遥测通道（VOFA justfloat）: J0~J5 关节角度(rad)，其余通道补零 */
+    for (uint8_t i = 0; i < CC_JOINT_POS_NUM; i++)
+    {
+        SEND_DATA_PID_TUNING.data[i] = cc_control_data.pos[i];
+    }
+    for (uint8_t i = CC_JOINT_POS_NUM; i < DEBUG_PACKAGE_NUM; i++)
+    {
+        SEND_DATA_PID_TUNING.data[i] = 0.0f;
+    }
 
     USB_Transmit((uint8_t *)&SEND_DATA_PID_TUNING, sizeof(SendDataPidTuning_s));
 }

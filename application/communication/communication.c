@@ -16,8 +16,6 @@
   @endverbatim
   ****************************(C) COPYRIGHT 2024 Polarbear****************************
   */
-#include "gimbal_double_yaw_pitch.h"
-#include "gimbal_yaw_pitch_direct.h"
 #include "communication.h"
 #include "data_exchange.h"
 #include "CRC8_CRC16.h"
@@ -28,14 +26,11 @@
 #include "remote_control.h"
 #include "detect_task.h"
 #include "IMU.h" //陀螺仪文件
-#include "controler_myself.h"
 
 #define USART_RX_BUF_LENGHT 512
 #define USART1_FIFO_BUF_LENGTH 1024
 
 // send data
-Controller_t BOARD_TX_DATA;
-// static const PidGetVofa_t *pid_get_vofa;
 // 全局CAN发送缓冲区
 static CanSendBuffer_t can_buffers[2][2] = {0}; // [CAN总线][标准ID类型]
 // can_buffers[0][0] = CAN1 0x200 (ID 1-4)
@@ -44,7 +39,6 @@ static CanSendBuffer_t can_buffers[2][2] = {0}; // [CAN总线][标准ID类型]
 // can_buffers[1][1] = CAN2 0x1FF (ID 5-8)
 // receive data
 
-CCControlData_t ControlData;
 uint8_t BOARD_RX_DATA[DATA_NUM][DATA_LEN + 1]; // 第一位存放数据长度信息
 // receive data buffer
 uint8_t usart1_buf[2][USART_RX_BUF_LENGHT];
@@ -181,32 +175,37 @@ void CanManagerClearBuffer(void)
 bool_t CanManagerAddMotor(uint8_t motor_id, uint8_t can_bus, int16_t current)
 {
     // 参数检查
-    if (motor_id < 1 || motor_id > 8 || can_bus < 1 || can_bus > 2) {
+    if (motor_id < 1 || motor_id > 8 || can_bus < 1 || can_bus > 2)
+    {
         return false;
     }
-    
-    uint8_t can_index = can_bus - 1;  // 转换为数组索引
+
+    uint8_t can_index = can_bus - 1; // 转换为数组索引
     uint8_t std_id_index, data_index;
-    
+
     // 确定标准ID和数据索引
-    if (motor_id >= 1 && motor_id <= 4) {
-        std_id_index = 0;  // 0x200
+    if (motor_id >= 1 && motor_id <= 4)
+    {
+        std_id_index = 0; // 0x200
         data_index = motor_id - 1;
-    } else {
-        std_id_index = 1;  // 0x1FF
+    }
+    else
+    {
+        std_id_index = 1; // 0x1FF
         data_index = motor_id - 5;
     }
-    
+
     // 检查冲突
-    if (can_buffers[can_index][std_id_index].data[data_index] != 0) {
+    if (can_buffers[can_index][std_id_index].data[data_index] != 0)
+    {
         // 发现冲突，可以选择覆盖或报错
         // 这里选择覆盖，但可以添加日志记录
     }
-    
+
     // 添加到缓冲区
     can_buffers[can_index][std_id_index].data[data_index] = current;
     can_buffers[can_index][std_id_index].need_send = true;
-    
+
     return true;
 }
 
@@ -218,19 +217,22 @@ bool_t CanManagerAddMotor(uint8_t motor_id, uint8_t can_bus, int16_t current)
 void CanManagerSendAll(void)
 {
     const uint16_t std_ids[2] = {0x200, 0x1FF};
-    
-    for (int can = 0; can < 2; can++) {
-        for (int std_id = 0; std_id < 2; std_id++) {
-            if (can_buffers[can][std_id].need_send) {
+
+    for (int can = 0; can < 2; can++)
+    {
+        for (int std_id = 0; std_id < 2; std_id++)
+        {
+            if (can_buffers[can][std_id].need_send)
+            {
                 CanCmdDjiMotor(can + 1, std_ids[std_id],
-                              can_buffers[can][std_id].data[0],
-                              can_buffers[can][std_id].data[1], 
-                              can_buffers[can][std_id].data[2],
-                              can_buffers[can][std_id].data[3]);
+                               can_buffers[can][std_id].data[0],
+                               can_buffers[can][std_id].data[1],
+                               can_buffers[can][std_id].data[2],
+                               can_buffers[can][std_id].data[3]);
             }
         }
     }
-    
+
     // 发送完成后清空缓冲区
     CanManagerClearBuffer();
 }
@@ -268,41 +270,8 @@ void USART1_IRQHandler(void)
     }
 }
 
-void uart_updata()
-{
-    const float *joint_feedback = GetGimbalJointFeedbackPoint();
-    for (uint8_t i = 0; i < CONTROLLER_MYSELF_JOINT_NUM; i++)
-    {
-        ControlData.pos[i] = joint_feedback[i];
-    }
-// ControlData.pos[1]=-ControlData.pos[1];
-// ControlData.pos[2]=-ControlData.pos[2];
-
-    DataPack((uint8_t *)&ControlData, (uint16_t)30, 0x0302);
-}
-
-/**
- * @brief 将数据打包填入发送数据结构体中
- * @param data 数据段的数组指针
- * @param data_lenth 数据段长度
- * @param data_id 数据段id
- */
-void DataPack(uint8_t *data, uint16_t data_lenth, uint16_t data_id)
-{
-    BOARD_TX_DATA.frame_header.sof = 0xA5;       // 数据帧起始字节，固定值为 0xA5
-    BOARD_TX_DATA.frame_header.data_length = data_lenth; // 数据帧中数据段的长度
-    BOARD_TX_DATA.frame_header.seq ++;           // 包序号
-    BOARD_TX_DATA.frame_header.crc8 = 0;          // 帧头CRC8校验
-    BOARD_TX_DATA.cmd_id = data_id;                       // 数据段id
-    // 添加帧头 CRC8 校验位
-    append_CRC8_check_sum(
-        (uint8_t *)(&BOARD_TX_DATA.frame_header), sizeof(BOARD_TX_DATA.frame_header));
-
-    memcpy(BOARD_TX_DATA.data, data, data_lenth); // 数据段
-
-    // 帧尾CRC16，整包校验
-    append_CRC16_check_sum((uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA));
-}
+/* 自定义控制器(USART1, 0x0302)的上行数据包由 custom_controller_connect.c 统一发送，
+   这里不再重复打包，避免同一个串口出现两个发送者。 */
 
 void DataUnpack(void)
 {

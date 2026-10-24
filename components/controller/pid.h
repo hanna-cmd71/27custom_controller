@@ -66,6 +66,43 @@ typedef struct Pid_t
     fp32 Dout;
 } Pid_t;
 
+    // 基本一阶低通滤波器结构体
+typedef struct {
+    float output;           // 滤波后输出值
+    float alpha;            // 滤波系数 (0-1)
+    int initialized;        // 初始化标志
+} LowPassFilter;
+
+/**
+* @brief 初始化一阶低通滤波器
+ * @param filter 滤波器指针
+ * @param alpha 滤波系数 (0.01-0.5)
+ * @param initial_value 初始值
+ */
+void lowpass_init(LowPassFilter* filter, float alpha, float initial_value);
+
+/**
+ * @brief 更新一阶低通滤波器
+ * @param filter 滤波器指针
+ * @param input 新输入值
+ * @return 滤波后的输出值
+ */
+float lowpass_update(LowPassFilter* filter, float input);
+
+/**
+ * @brief 重置滤波器状态
+ * @param filter 滤波器指针
+ * @param reset_value 重置后的值
+ */
+void lowpass_reset(LowPassFilter* filter, float reset_value);
+
+/**
+ * @brief 获取当前滤波输出（不更新）
+ * @param filter 滤波器指针
+ * @return 当前滤波输出值
+ */
+float lowpass_get_output( LowPassFilter* filter);
+
 /**
   * @brief          pid struct data init
   * @param[out]     pid: PID结构数据指针

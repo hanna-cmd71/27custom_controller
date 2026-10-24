@@ -10,6 +10,11 @@
 
 #define CUSTOM_CONTROLLER_TYPE CUSTOM_CONTROLLER_ENGINEER  // 选择自定义控制器类型
 
+// IMU 安装角度（弧度，0.0f 表示 IMU 与机体坐标系对齐）
+#define IMU_ROLL_ANGLE  (0.0f)
+#define IMU_PITCH_ANGLE (0.0f)
+#define IMU_YAW_ANGLE   (0.0f)
+
 // 机器人物理参数
 /*-------------------- Custom Controller --------------------*/
 //motor parameters ---------------------

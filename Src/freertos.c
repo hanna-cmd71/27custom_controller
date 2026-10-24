@@ -28,54 +28,27 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "calibrate_task.h"
-#include "chassis_task.h"
 #include "detect_task.h"
-#include "gimbal_task.h"
 #include "IMU_task.h"
 #include "led_flow_task.h"
 #include "oled_task.h"
 #include "referee_usart_task.h"
 #include "usb_task.h"
 #include "voltage_task.h"
-#include "shoot_task.h"
-#include "mechanical_arm_task.h"
-#include "music_task.h"
 #include "custom_controller_task.h"
 #include "communication_task.h"
-#include "remoto.h"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-osThreadId calibrate_tast_handle;
-
 osThreadId detect_handle;
 
 osThreadId communication_handle;
 
-#if (CHASSIS_TYPE != CHASSIS_NONE)
-osThreadId chassisTaskHandle;
-#endif
-
-osThreadId gimbalTaskHandle;
-osThreadId remototakshandle;
-#if (SHOOT_TYPE != SHOOT_NONE)
-osThreadId shootTaskHandle;
-#endif
-
-#if (MECHANICAL_ARM_TYPE != MECHANICAL_ARM_NONE)
-osThreadId mechanical_armTaskHandle;
-#endif
-
 #if (CUSTOM_CONTROLLER_TYPE != CUSTOM_CONTROLLER_NONE)
 osThreadId customControllerTaskHandle;
-#endif
-
-#if (__MUSIC_ON)
-osThreadId musicTaskHandle;
 #endif
 
 osThreadId imuTaskHandle;
@@ -186,43 +159,15 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-    osThreadDef(cali, calibrate_task, osPriorityNormal, 0, 512);
-    calibrate_tast_handle = osThreadCreate(osThread(cali), NULL);
-
     osThreadDef(DETECT, detect_task, osPriorityNormal, 0, 256);
     detect_handle = osThreadCreate(osThread(DETECT), NULL);
 
     osThreadDef(COMMUNICATION, communication_task, osPriorityNormal, 0, 256);
     communication_handle = osThreadCreate(osThread(COMMUNICATION), NULL);
 
-#if (CHASSIS_TYPE != CHASSIS_NONE)
-    osThreadDef(ChassisTask, chassis_task, osPriorityAboveNormal, 0, 512);
-    chassisTaskHandle = osThreadCreate(osThread(ChassisTask), NULL);
-#endif
-
-    osThreadDef(gimbalTask, gimbal_task, osPriorityHigh, 0, 512);
-    gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
-
-
-
-#if (SHOOT_TYPE != SHOOT_NONE)
-    osThreadDef(shootTask, shoot_task, osPriorityHigh, 0, 512);
-    shootTaskHandle = osThreadCreate(osThread(shootTask), NULL);
-#endif
-
-#if (MECHANICAL_ARM_TYPE != MECHANICAL_ARM_NONE)
-    osThreadDef(mechanical_armTask, mechanical_arm_task, osPriorityHigh, 0, 512);
-    mechanical_armTaskHandle = osThreadCreate(osThread(mechanical_armTask), NULL);
-#endif
-
 #if (CUSTOM_CONTROLLER_TYPE != CUSTOM_CONTROLLER_NONE)
     osThreadDef(customControllerTask, custom_controller_task, osPriorityHigh, 0, 512);
     customControllerTaskHandle = osThreadCreate(osThread(customControllerTask), NULL);
-#endif
-
-#if (__MUSIC_ON)
-    osThreadDef(musicTask, music_task, osPriorityNormal, 0, 256);
-    musicTaskHandle = osThreadCreate(osThread(musicTask), NULL);
 #endif
 
     osThreadDef(imuTask, IMU_task, osPriorityRealtime, 0, 1024);

@@ -18,6 +18,7 @@
 #include "pid.h"
 
 #include "main.h"
+
 #define LimitMax(input, max)       \
     {                              \
         if (input > max) {         \
@@ -26,6 +27,67 @@
             input = -max;          \
         }                          \
     }
+
+
+
+
+/**
+ * @brief 初始化低通滤波器
+ * @param filter 滤波器指针
+ * @param alpha 滤波系数 (0-1)
+ *          0.01: 强滤波，慢响应
+ *          0.1:  中等滤波
+ *          0.3:  弱滤波，快响应
+ * @param initial_value 初始值
+ */
+void lowpass_init(LowPassFilter* filter, float alpha, float initial_value) {
+    // 确保alpha在有效范围内
+    if (alpha <= 0.0f) alpha = 0.0f;
+    if (alpha > 1.0f) alpha = 1.0f;
+    
+    filter->alpha = alpha;
+    filter->output = initial_value;
+    filter->initialized = 1;
+}
+
+/**
+ * @brief 更新低通滤波器
+ * @param filter 滤波器指针
+ * @param input 新输入值
+ * @return 滤波后的输出值
+ */
+float lowpass_update(LowPassFilter* filter, float input) {
+    if (!filter->initialized) {
+        // 如果未初始化，使用输入值作为初始输出
+        filter->output = input;
+        filter->initialized = 1;
+        return input;
+    }
+    
+    // 一阶低通滤波公式: y[n] = α * x[n] + (1-α) * y[n-1]
+    filter->output = filter->alpha * input + (1.0f - filter->alpha) * filter->output;
+    
+    return filter->output;
+}
+
+/**
+ * @brief 重置滤波器（清除历史状态）
+ * @param filter 滤波器指针
+ * @param reset_value 重置后的值（可选）
+ */
+void lowpass_reset(LowPassFilter* filter, float reset_value) {
+    filter->output = reset_value;
+    filter->initialized = 1;
+}
+
+/**
+ * @brief 获取当前滤波输出（不更新）
+ * @param filter 滤波器指针
+ * @return 当前滤波输出值
+ */
+float lowpass_get_output(LowPassFilter* filter) {
+    return filter->output;
+}
 
 /**
   * @brief          pid struct data init

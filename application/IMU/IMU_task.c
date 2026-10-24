@@ -28,7 +28,6 @@
 #include "bmi088driver.h"
 #include "bsp_imu_pwm.h"
 #include "bsp_spi.h"
-#include "calibrate_task.h"
 #include "cmsis_os.h"
 #include "data_exchange.h"
 #include "detect_task.h"
@@ -37,7 +36,6 @@
 #include "math.h"
 #include "pid.h"
 #include "robot_param.h"
-#include "usb_debug.h"
 
 // clang-format off
 #define IMU_temp_PWM(pwm)  imu_pwm_set(pwm)                    //pwm给定
@@ -374,7 +372,7 @@ static void imu_temp_control(fp32 temp)
     }
     else if (first_temperate)
     {
-        PID_calc(&imu_temp_pid, temp, get_control_temperature());
+        PID_calc(&imu_temp_pid, temp, IMU_TARGET_TEMPERATURE);
         if (imu_temp_pid.out < 0.0f)
         {
             imu_temp_pid.out = 0.0f;
@@ -386,7 +384,7 @@ static void imu_temp_control(fp32 temp)
     {
         //在没有达到设置的温度，一直最大功率加热
         //in beginning, max power
-        if (temp > get_control_temperature())
+        if (temp > IMU_TARGET_TEMPERATURE)
         {
             temp_constant_time++;
             if (temp_constant_time > 200)

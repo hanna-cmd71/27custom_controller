@@ -52,6 +52,8 @@
 #define TEMPERATURE_PID_MAX_OUT   4500.0f //温度控制PID的max_out
 #define TEMPERATURE_PID_MAX_IOUT 4400.0f  //温度控制PID的max_iout
 
+#define IMU_TARGET_TEMPERATURE 40.0f //IMU 加热目标温度(℃)，原由校准模块的 head_cali.temperature 提供
+
 #define MPU6500_TEMP_PWM_MAX 5000 //mpu6500控制温度的设置TIM的重载值，即给PWM最大为 MPU6500_TEMP_PWM_MAX - 1
 
 
