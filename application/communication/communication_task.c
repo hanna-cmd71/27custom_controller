@@ -8,7 +8,7 @@ uint32_t communication_high_water;
 #endif
 // 任务相关时间
 #define COMMUNICATION_TASK_INIT_TIME 100
-#define COMMUNICATION_TASK_TIME_MS 50
+#define COMMUNICATION_TASK_TIME_MS 100
 
 void communication_task(void const *pvParameters)
 {
@@ -23,7 +23,14 @@ void communication_task(void const *pvParameters)
         // 统一发送所有CAN命令
         CanManagerSendAll();
 
-        // 自定义控制器(USART1, 0x0302)的上行数据由 custom_controller_connect.c 发送
+        // uart1发送
+        uart_updata();
+        // UartSendTxMessage(&huart1, (uint8_t *)(&ControlData), sizeof(ControlData), 100);
+
+        UartSendTxMessage(&huart1, (uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA), 100);
+                vTaskDelay(30);
+
+        UartSendTxMessage(&huart6, (uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA), 100);
 
         DataUnpack();
 

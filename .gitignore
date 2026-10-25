@@ -37,7 +37,3 @@ application/chassis/matlab_balance/slprj/
 *.scvd
 *.iex
 *.ini
-# IDE/构建输出
-MDK-ARM/build/
-.vscode/setting.json
-

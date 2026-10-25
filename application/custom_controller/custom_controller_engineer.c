@@ -25,6 +25,7 @@
 #include "custom_controller.h"
 #include "math.h"
 #include "string.h"
+#include "usb_debug.h"
 #include "user_lib.h"
 
 /*------------------------------ Macro Definition ------------------------------*/

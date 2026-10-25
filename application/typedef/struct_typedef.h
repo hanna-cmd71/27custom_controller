@@ -23,9 +23,16 @@
 #define GRAVITY     9.8f                       // 重力加速度
 
 
-/* 定宽整数类型统一交给 C 标准库，避免与 <stdint.h> 重复定义 */
-#include <stdint.h>
+typedef signed char int8_t;
+typedef signed short int int16_t;
+typedef signed int int32_t;
+typedef signed long long int64_t;
 
+/* exact-width unsigned integer types */
+typedef unsigned char uint8_t;
+typedef unsigned short int uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned long long uint64_t;
 typedef unsigned char bool_t;
 typedef float fp32;
 typedef double fp64;

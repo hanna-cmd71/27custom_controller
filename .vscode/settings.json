@@ -1,0 +1,13 @@
+{
+  "background.enabled": true,
+  "background.fullscreen": {
+    "images": [
+      "file:///C:/Users/369QWE/Pictures/small081437ZdUbr1774484077.jpg"
+    ],
+    "opacity": 0.15,
+    "size": "cover",
+    "position": "center",
+    "interval": 0,
+    "random": false
+  }
+}

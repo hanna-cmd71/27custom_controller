@@ -33,9 +33,36 @@ typedef struct {
     bool_t need_send;
 } CanSendBuffer_t;
 
+typedef struct
+{
+    float pos[7];
+} CCControlData_t;
+extern CCControlData_t ControlData;
+
+typedef __packed struct
+{
+    __packed struct
+    {
+        uint8_t sof;               // 起始字节，固定值为0xA5
+        uint16_t data_length;      // 数据帧中data的长度
+        uint8_t seq;               // 包序号
+        uint8_t crc8;              // 帧头CRC8校验
+
+    } frame_header;                // 帧头
+    __packed uint16_t cmd_id;      // 命令码
+    __packed uint8_t data[30];     // 自定义控制器的数据帧
+    __packed uint16_t frame_tail;  // 帧尾CRC16校验
+} Controller_t;                    // 自定义控制器数据包
+
+extern Controller_t BOARD_TX_DATA;
+
 void SendRC(void);
 
 extern void SendInit(void);
+
+extern void uart_updata();
+
+extern void DataPack(uint8_t * data, uint16_t data_lenth, uint16_t data_id);
 
 extern void DataUnpack(void);
 

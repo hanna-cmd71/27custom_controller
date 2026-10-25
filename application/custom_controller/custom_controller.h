@@ -8,8 +8,6 @@
 #define CUSTOM_CONTROLLER_CONTROL_TIME 1000
 #define CUSTOM_CONTROLLER_SEND_TIME 34  //30Hz = (1000/30)ms 向上取整
 
-#define CC_JOINT_POS_NUM 6  // 自定义控制器上送到上位机的关节角数量(J0~J5)
-
 typedef struct
 {
     void (*Blank)(void);

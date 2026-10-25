@@ -17,6 +17,9 @@
 #ifndef ARM_MATH_CM4
 #define ARM_MATH_CM4
 #endif
+#ifndef __CC_ARM
+#define __CC_ARM
+#endif
 #ifndef ARM_MATH_MATRIX_CHECK
 #define ARM_MATH_MATRIX_CHECK
 #endif

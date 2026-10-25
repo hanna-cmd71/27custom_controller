@@ -13,8 +13,7 @@ virtualFolder:
       folders:
         - name: MDK-ARM
           files:
-            - path: startup_stm32f407xx.asm
-            - path: startup_stm32f407xx.o
+            - path: startup_stm32f407xx.s
           folders: []
         - name: User
           files:
@@ -298,7 +297,6 @@ targets:
         - ARM_MATH_CM4
         - __FPU_USED=1U
         - __FPU_PRESENT=1U
-        - __CC_ARM
         - ARM_MATH_MATRIX_CHECK
         - ARM_MATH_ROUNDING
       incList:
@@ -316,7 +314,6 @@ targets:
         - ../components/algorithm
         - ../components/algorithm/Include
         - ../components/support
-        - ../application/protocol
         - ../components/controller
         - ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc
         - ../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
@@ -334,8 +331,6 @@ targets:
         - ../application/communication
         - ../application/calibrate
         - ../application/typedef
-        - .cmsis/include
-        - RTE/_standard_robot
         - ../application/typedef_robot
       libList: []
     excludeList:
@@ -355,7 +350,7 @@ targets:
       - ../application/music/music_you.c
     settings:
       debugger: cortex-debug
-    toolchain: AC6
+    toolchain: AC5
     toolchainConfigMap:
       AC5:
         archExtensions: ""
@@ -370,13 +365,13 @@ targets:
               disable: false
             - name: axf to elf
               abortAfterFailed: false
-              command: '"D:\K5\ARM\ARMCLANG\bin\fromelf.exe" --elf -o ${OutDir}\${ProjectName}.elf ${OutDir}\${ProjectName}.axf'
+              command: '"D:\RM\Keil\Core\ARM\ARMCC\bin\fromelf.exe" --elf -o ${OutDir}\${ProjectName}.elf ${OutDir}\${ProjectName}.axf'
               disable: false
           asm-compiler: {}
           beforeBuildTasks: []
           c/cpp-compiler:
-            CXX_FLAGS: --diag_suppress=1 --diag_suppress=1295 --diag_error=warning
-            C_FLAGS: --diag_suppress=1 --diag_suppress=1295 --diag_error=warning
+            CXX_FLAGS: --diag_suppress=1 --diag_suppress=1295
+            C_FLAGS: --diag_suppress=1 --diag_suppress=1295
             c99-mode: true
             one-elf-section-per-function: true
             optimization: level-0
@@ -462,49 +457,6 @@ targets:
                 startAddr: "0x0"
               tag: IROM
         useCustomScatterFile: false
-      AC6:
-        archExtensions: ""
-        cpuType: Cortex-M4
-        floatingPointHardware: single
-        options:
-          version: 3
-          afterBuildTasks: []
-          asm-compiler:
-            $use: asm-auto
-            misc-controls: ""
-          beforeBuildTasks: []
-          c/cpp-compiler:
-            language-c: c99
-            language-cpp: c++11
-            link-time-optimization: false
-            optimization: level-0
-          global:
-            output-debug-info: enable
-            use-microLIB: false
-          linker:
-            $outputTaskExcludes:
-              - .bin
-            misc-controls: --diag_suppress=L6329
-            output-format: elf
-        scatterFilePath: <YOUR_SCATTER_FILE>.sct
-        storageLayout:
-          RAM:
-            - id: 1
-              isChecked: true
-              mem:
-                size: "0x5000"
-                startAddr: "0x20000000"
-              noInit: false
-              tag: IRAM
-          ROM:
-            - id: 1
-              isChecked: true
-              isStartup: true
-              mem:
-                size: "0x10000"
-                startAddr: "0x08000000"
-              tag: IROM
-        useCustomScatterFile: false
     uploadConfigMap:
       Custom:
         bin: ""
@@ -525,7 +477,7 @@ targets:
         interface: cmsis-dap
         target: stm32f4x
       STLink:
-        address: "0x08000000"
+        address: "0x8000000"
         bin: ${ExecutableName}.axf
         elFile: None
         optionBytes: .eide/keil.st.option.bytes.ini

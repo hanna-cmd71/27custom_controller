@@ -31,6 +31,7 @@
 #include "detect_task.h"
 #include "robot_param.h"
 #include "string.h"
+#include "usb_debug.h"
 #include "user_lib.h"
 
 #define DATA_NUM 10
