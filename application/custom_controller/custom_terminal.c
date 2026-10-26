@@ -27,7 +27,8 @@ CCControlData_t cc_control_data = {
     .pos = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
 };
 
-#if (CUSTOM_CONTROLLER_TYPE == CUSTOM_CONTROLLER_TERMINAL)
+/* 本工程只服务自定义终端这一种配置，已取消 CUSTOM_CONTROLLER_TYPE 变体分支：
+ * 本文件无条件编译，其它配置不再有"空实现"这条退路。 */
 
 
 /* 每个关节的驱动地址：0 = 该关节不是 ZDT 电机（走 robostride） */
@@ -499,20 +500,6 @@ void CustomControllerSendToPC(void)
         (void)HAL_UART_Transmit_DMA(uart, (uint8_t *)frame, (uint16_t)sizeof(*frame));
     }
 }
-
-#else /* 未启用自定义终端：给通信模块一个安全的空实现 */
-
-/**
- * @brief 未启用自定义终端时的空实现
- */
-const float *custom_terminal_get_joint_feedback(void)
-{
-    static const float joint_feedback_zero[CUSTOM_TERMINAL_JOINT_NUM] = {0.0f};
-
-    return joint_feedback_zero;
-}
-
-#endif
 
 /**
  * @brief 获取全部关节角度数组指针 (rad)
