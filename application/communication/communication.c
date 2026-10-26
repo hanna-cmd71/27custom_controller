@@ -296,6 +296,14 @@ void DataUnpack(void)
                 uint8_t data_id = frame_header[FRAME_HEADER_ID_OFFEST];
                 // uint8_t data_type = frame_header[FRAME_HEADER_TYPE_OFFEST];
 
+                /* 边界守卫：data_id / data_len 都是帧头里的原始字节 (0..255)，
+                 * 不校验就直接索引 BOARD_RX_DATA[DATA_NUM][DATA_LEN + 1]，
+                 * 一帧 CRC 合法的异常数据就能写穿到后面的全局变量。 */
+                if ((data_id >= DATA_NUM) || (data_len > DATA_LEN))
+                {
+                    continue;
+                }
+
                 fifo_s_gets(&usart1_fifo, (char *)(received + FRAME_HEADER_LEN), DATA_LEN + 2);
                 uint16_t crc_ok = verify_CRC16_check_sum(received, sizeof(BoardCommunicateData_s));
                 if (crc_ok)
