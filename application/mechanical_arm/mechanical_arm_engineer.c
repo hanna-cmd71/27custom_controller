@@ -47,7 +47,6 @@
 #include "PWM_cmd_pump.h"
 #include "bsp_delay.h"
 #include "cmsis_os.h"
-#include "custom_controller_connect.h"
 #include "detect_task.h"
 #include "math.h"
 #include "pid.h"

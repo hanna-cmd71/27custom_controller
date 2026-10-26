@@ -25,7 +25,9 @@
 
 // 可用自定义控制器硬件类型
 #define CUSTOM_CONTROLLER_NONE         0  // 无自定义控制器
-#define CUSTOM_CONTROLLER_ENGINEER     1  // 工程用的自定义控制器
+/* 1 原为 CUSTOM_CONTROLLER_ENGINEER（工程机器人变体），已移除，编号留空不复用，
+ * 避免旧参数文件/旧上位机配置按编号误命中。 */
+#define CUSTOM_CONTROLLER_TERMINAL     2  // 自定义终端（6 自由度机械臂）
 
 // 可用调参模式
 #define TUNING_NONE             0
@@ -80,7 +82,7 @@ typedef enum __MotorType {
     DM_4310,
     DM_4340,
     MF_9025,
-    SBzdatou,
+    zdatou,
 } MotorType_e;
 // clang-format on
 

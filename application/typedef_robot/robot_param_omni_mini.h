@@ -1,13 +1,13 @@
 /**
  * @file       robot_param_omni_sentry.h
- * @brief      这里是全向轮哨兵机器人参数配置文件，包括物理参数、PID参数等
+ * @brief      这里是全向轮哨兵机器人参数配置文件，包括物理参数、PID参数�?
  */
 
 #ifndef INCLUDED_ROBOT_PARAM_H
 #define INCLUDED_ROBOT_PARAM_H
 #include "robot_typedef.h"
 
-//快速选择对应的板子
+//快速选择对应的板�?
 // #define BOARD_CURRENT C_BOARD_DEFAULT
 #define BOARD_CURRENT C_BOARD_DOWN
 // #define BOARD_CURRENT C_BOARD_UP
@@ -15,7 +15,7 @@
 // 快速设置双板的配置
 #if(BOARD_CURRENT == C_BOARD_DOWN)
 #define CHASSIS_TYPE CHASSIS_NONE                 // 选择底盘类型
-#define GIMBAL_TYPE CHASSIS_NONE                         // 选择云台类型
+#define GIMBAL_TYPE GIMBAL_NONE                          // 选择云台类型
 #define SHOOT_TYPE SHOOT_NONE                           // 选择发射机构类型
 #define BOARD_OTHER C_BOARD_UP                          // 选择其他板子类型
 
@@ -37,14 +37,14 @@
 
 
 // IMU安装角度参数 (单位：度) yaw -> pitvh -> roll
-#define IMU_ROLL_ANGLE (0.0f)     // 绕X轴旋转角度
-#define IMU_PITCH_ANGLE (0.0f)    // 绕Y轴旋转角度 
-#define IMU_YAW_ANGLE (0.0f)      // 绕Z轴旋转角度  
+#define IMU_ROLL_ANGLE (0.0f)     // 绕X轴旋转角�?
+#define IMU_PITCH_ANGLE (0.0f)    // 绕Y轴旋转角�?
+#define IMU_YAW_ANGLE (0.0f)      // 绕Z轴旋转角�? 
 
 
 //通用配置
-#define MECHANICAL_ARM_TYPE MECHANICAL_ARM_NONE       // 选择机械臂类型
-#define CUSTOM_CONTROLLER_TYPE CUSTOM_CONTROLLER_NONE // 选择自定义控制器类型
+#define MECHANICAL_ARM_TYPE MECHANICAL_ARM_NONE       // 选择机械臂类�?
+#define CUSTOM_CONTROLLER_TYPE CUSTOM_CONTROLLER_TERMINAL // 选择自定义控制器类型
 
 /*-------------------- Chassis --------------------*/
 
@@ -53,11 +53,11 @@
 
 // physical parameters ---------------------
 #define WHEEL_RADIUS (0.15f)           //(m)轮子直径
-#define WHEEL_CENTER_DISTANCE (0.245f) //(m)轮子到车的距离（0.22 + 0.21）
+#define WHEEL_CENTER_DISTANCE (0.245f) //(m)轮子到车的距离（0.22 + 0.21�?
 #define yaw_mid_date 1.1f
 
 // motor parameters ---------------------
-// 底盘电流发送参数
+// 底盘电流发送参�?
 #define CHASSIS_CAN (1)
 #define CHASSIS_STDID (0x200)
 
@@ -113,14 +113,14 @@
 #define MAX_OUT_CHASSIS_FOLLOW_GIMBAL (3.0f)
 
 // RC parametes ---------------------
-// 遥控器相关参数
+// 遥控器相关参�?
 #define CHASSIS_RC_DEADLINE (5.0f)     // 摇杆死区
-#define CHASSIS_RC_MAX_RANGE (660.0f)  // 遥控器最大量程
+#define CHASSIS_RC_MAX_RANGE (660.0f)  // 遥控器最大量�?
 #define CHASSIS_RC_MAX_SPEED (2.2f)    // 最大速度(m/s)
 #define CHASSIS_RC_MAX_VELOCITY (5.0f) // 最大角速度(rad/s) 仅用于无云台模式
 
 /*-------------------- Gimbal --------------------*/
-// 云台电流发送参数
+// 云台电流发送参�?
 #define GIMBAL_CAN (2)
 #define GIMBAL_STDID (0x1FF) //电压控制1-4(0x1FF)5-7(0x2FF) 电流控制 1-4(0x1FE)5-7(0x2FE)
 
@@ -137,7 +137,7 @@
 #define GIMBAL_DIRECT_YAW_ID ((uint8_t)2)
 #define GIMBAL_DIRECT_PITCH_ID ((uint8_t)1)
 
-// 电机can口
+// 电机can�?
 #define GIMBAL_DIRECT_YAW_CAN ((uint8_t)2)
 #define GIMBAL_DIRECT_PITCH_CAN ((uint8_t)2)
 
@@ -162,11 +162,11 @@
 // #define GIMBAL_LOWER_LIMIT_PITCH (0.4f)
 #define GIMBAL_UPPER_LIMIT_PITCH (-0.55f)
 #define GIMBAL_LOWER_LIMIT_PITCH (-1.62)
-#define GIMBAL_YAW_LIMIT (0) // 云台yaw轴是否有限位 1 - 有限位，0 - 无限位
+#define GIMBAL_YAW_LIMIT (0) // 云台yaw轴是否有限位 1 - 有限位，0 - 无限�?
 
-// 电机角度中值设置
-#define GIMBAL_DIRECT_PITCH_MID (0.0f) // 云台初始化正对齐的时候使用的pitch轴正中心量
-#define GIMBAL_DIRECT_YAW_MID (1.5393f)   // 云台初始化正对齐的时候使用的yaw轴正中心量
+// 电机角度中值设�?
+#define GIMBAL_DIRECT_PITCH_MID (0.0f) // 云台初始化正对齐的时候使用的pitch轴正中心�?
+#define GIMBAL_DIRECT_YAW_MID (1.5393f)   // 云台初始化正对齐的时候使用的yaw轴正中心�?
 #define REMOTE_CONTROLLER_SENSITIVITY_YAW (300000.0f)   // 云台遥控器灵敏度
 #define REMOTE_CONTROLLER_SENSITIVITY_PITCH (300000.0f) // 云台遥控器灵敏度
 #define GIMBAL_LOWER_LIMIT_YAW    (-M_PI)     // (GIMBAL_LOWER_LIMIT_YAW_BA + GIMBAL_LOWER_LIMIT_YAW_UP) 
@@ -200,14 +200,14 @@
 
 /*-------------------- Shoot --------------------*/
 // physical parameters ---------------------
-#define FRIC_RADIUS 0.03f                    // (m)摩擦轮半径
-#define ECD_RANGE 8191                       // 电机反馈码盘值范围
-#define BULLET_NUM 8                         // 定义拨弹盘容纳弹丸个数
+#define FRIC_RADIUS 0.03f                    // (m)摩擦轮半�?
+#define ECD_RANGE 8191                       // 电机反馈码盘值范�?
+#define BULLET_NUM 8                         // 定义拨弹盘容纳弹丸个�?
 #define TRIGGER_REDUCTION_RATIO 1        // 定义电机到拨弹盘的齿轮减速比
 #define dianji_Transmission_ratio  36.0f     //电机的传动比
 #define all_Transmission_ratio dianji_Transmission_ratio*TRIGGER_REDUCTION_RATIO //电机到拨弹盘的总传动比
 #define error1 (all_Transmission_ratio-SHOOT.trigger_error.all_Transmission_ratio_z)/SHOOT.trigger_error.all_Transmission_ratio_z*ECD_RANGE//电机转一圈产生的误差
-#define GUN_NUM 1         // 定义枪管个数（一个枪管2个摩擦轮）
+#define GUN_NUM 1         // 定义枪管个数（一个枪�?个摩擦轮�?
 
 /*MOTOR paramters --------------------*/
 #define SHOOT_MODE_CHANNEL 1  // 射击发射开关通道数据
@@ -221,7 +221,7 @@
 #define FRIC_MOTOR_R_ID 4
 #define FRIC_MOTOR_L_ID 1
 #define FRIC_MOTOR_U_ID 9
-// 电机can口
+// 电机can�?
 #define TRIGGER_MOTOR_CAN 1
 #define FRIC_MOTOR_R_CAN 2
 #define FRIC_MOTOR_L_CAN 1
@@ -241,11 +241,11 @@
 #define FRIC_SPEED_LIMIT (800.0f)
 
 /*ECD parameters------------*/
-// 电机反馈码盘值范围
+// 电机反馈码盘值范�?
 #define HALF_ECD_RANGE 4096
 #define ECD_RANGE 8191
 
-// 电机rpm 变化成 旋转速度的比例
+// 电机rpm 变化�?旋转速度的比�?
 #define MOTOR_RPM_TO_SPEED 0.00290888208665721596153948461415f
 #define MOTOR_ECD_TO_ANGLE 0.000021305288720633905968306772076277f
 #define FULL_COUNT 18
@@ -264,7 +264,7 @@
 
 /*PID parameters ---------------------*/
 
-// 拨弹轮电机PID速度环
+// 拨弹轮电机PID速度�?
 #define TRIGGER_SPEED_PID_KP (100.0f)//
 #define TRIGGER_SPEED_PID_KI (0.1f)
 #define TRIGGER_SPEED_PID_KD (0.0f)//0.1
@@ -272,7 +272,7 @@
 #define TRIGGER_SPEED_PID_MAX_OUT (16000.0f)
 #define TRIGGER_SPEED_PID_MAX_IOUT (0.0f)
 
-// 拨弹轮电机PID角度环
+// 拨弹轮电机PID角度�?
 #define TRIGGER_ANGEL_PID_KP (10.0f)
 #define TRIGGER_ANGEL_PID_KI (0.05f)
 #define TRIGGER_ANGEL_PID_KD (0.05f)
@@ -288,7 +288,7 @@
 #define FRIC_PID_MAX_OUT (16000.0f)
 #define FRIC_PID_MAX_IOUT (1000.0f)
 
-// 当未连接裁判系统设置负值方便调试
+// 当未连接裁判系统设置负值方便调�?
 #define SHOOT_HEAT_REMAIN_VALUE -80 // 89
 
 #endif /* INCLUDED_ROBOT_PARAM_H */

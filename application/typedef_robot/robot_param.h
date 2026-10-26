@@ -1,11 +1,11 @@
 /**
   ****************************(C) COPYRIGHT 2024 Polarbear****************************
   * @file       robot_param.h
-  * @brief      这里是机器人参数配置文件，包括底盘参数，物理参数等
+  * @brief      这里是机器人参数配置文件，包括底盘参数，物理参数�?
   * @history
   *  Version    Date            Author          Modification
   *  V1.0.0     Mar-31-2024     Penguin         1. done
-  *  V1.0.1     Apr-16-2024     Penguin         1. 添加云台和发射机构类型
+  *  V1.0.1     Apr-16-2024     Penguin         1. 添加云台和发射机构类�?
   *
   @verbatim
   ==============================================================================
@@ -30,13 +30,16 @@
 #include "robot_param_omni_mini.h"
 // #include "robot_param_mini_pro.h"
 
+
+// terminal arm params (C board): see robot_param_terminal.h
+#include "robot_param_terminal.h"
 // #include "robot_param_mecannum_hero.h"
 // #include "robot_param_fly.h"
 // ${ExecutableName}.elf
 // 选择机器人的各种类型
-#define __RC_TYPE RC_DT7           // 遥控器类型                                        6
+#define __RC_TYPE RC_DT7           // 遥控器类�?                                       6
 #define __DEBUG 1                  // 调试模式
-#define __MUSIC_ON 0               // 开启音乐
+#define __MUSIC_ON 0               // 开启音�?
 
 #define __TUNING_MODE TUNING_F00T  // 调参模式
 
@@ -47,7 +50,7 @@
 // USB通信的部分选项
 #define __USB_SEND_DEBUG 0  // 发送DEBUG数据
 
-// 模块检查
+// 模块检�?
 #ifndef BOARD_CURRENT
 #define BOARD_CURRENT C_BOARD_DEFAULT
 #endif

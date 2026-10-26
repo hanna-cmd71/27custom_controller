@@ -37,3 +37,7 @@ application/chassis/matlab_balance/slprj/
 *.scvd
 *.iex
 *.ini
+
+# local session / build scratch (not part of the firmware source)
+.workbuddy-ai/
+_check/

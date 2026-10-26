@@ -181,10 +181,11 @@ virtualFolder:
           folders: []
         - name: custom_controller
           files:
-            - path: ../application/custom_controller/custom_controller.c
             - path: ../application/custom_controller/custom_controller_task.c
-            - path: ../application/custom_controller/custom_controller_engineer.c
-            - path: ../application/custom_controller/custom_controller_connect.c
+            - path: ../application/custom_controller/custom_terminal.c
+            - path: ../application/custom_controller/terminal_debug.c
+            - path: ../application/custom_controller/terminal_kinematics.c
+            - path: ../application/custom_controller/terminal_gravity.c
           folders: []
         - name: gimbal
           files:
@@ -193,7 +194,6 @@ virtualFolder:
             - path: ../application/gimbal/gimbal_yaw_pitch_direct.c
             - path: ../application/gimbal/gimbal_virtual.c
             - path: ../application/gimbal/gimbal_double_yaw_pitch.c
-            - path: ../application/gimbal/controler_myself.c
           folders: []
         - name: IMU
           files:
@@ -256,7 +256,7 @@ virtualFolder:
             - path: ../application/robot_cmd/CAN_cmd_SupCap.c
             - path: ../application/robot_cmd/PWM_cmd_pump.c
             - path: ../application/robot_cmd/PWM_cmd_servo.c
-            - path: ../application/robot_cmd/CAN_cmd_SBzdatou.c
+            - path: ../application/robot_cmd/CAN_cmd_zdatou.c
             - path: ../application/robot_cmd/CAN_cmd_robostride.c
           folders: []
         - name: typedef
@@ -455,6 +455,49 @@ targets:
               mem:
                 size: "0x0"
                 startAddr: "0x0"
+              tag: IROM
+        useCustomScatterFile: false
+      AC6:
+        archExtensions: ""
+        cpuType: Cortex-M4
+        floatingPointHardware: single
+        options:
+          version: 3
+          afterBuildTasks: []
+          asm-compiler:
+            $use: asm-auto
+            misc-controls: ""
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            language-c: c99
+            language-cpp: c++11
+            link-time-optimization: false
+            optimization: level-0
+          global:
+            output-debug-info: enable
+            use-microLIB: false
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            misc-controls: --diag_suppress=L6329
+            output-format: elf
+        scatterFilePath: <YOUR_SCATTER_FILE>.sct
+        storageLayout:
+          RAM:
+            - id: 1
+              isChecked: true
+              mem:
+                size: "0x5000"
+                startAddr: "0x20000000"
+              noInit: false
+              tag: IRAM
+          ROM:
+            - id: 1
+              isChecked: true
+              isStartup: true
+              mem:
+                size: "0x10000"
+                startAddr: "0x08000000"
               tag: IROM
         useCustomScatterFile: false
     uploadConfigMap:

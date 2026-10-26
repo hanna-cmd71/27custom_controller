@@ -213,6 +213,13 @@ void USART6_IRQHandler(void)
             detect_hook(REFEREE_TOE);
         }
     }
+
+    /* 交给 HAL 收尾：发送完成(TC)标志由这里清掉，DMA 发送才能把 gState 释放回 READY。
+     * 必须放在 IDLE 分支之后 —— __HAL_UART_CLEAR_PEFLAG() 是"读 SR 再读 DR"，
+     * 如果 HAL 先跑，它会把 IDLE 标志一并清掉，上面就拿不到本次接收长度了。
+     * 接收侧是手工配的 DMA，没开 PEIE/EIE/RXNEIE，所以 HAL 内部只会走 TC 分支，
+     * 不会去动 hdmarx，上面的双缓冲搬运逻辑不受影响。 */
+    HAL_UART_IRQHandler(&huart6);
 }
 
 

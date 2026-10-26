@@ -23,14 +23,10 @@ void communication_task(void const *pvParameters)
         // 统一发送所有CAN命令
         CanManagerSendAll();
 
-        // uart1发送
-        uart_updata();
-        // UartSendTxMessage(&huart1, (uint8_t *)(&ControlData), sizeof(ControlData), 100);
-
-        UartSendTxMessage(&huart1, (uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA), 100);
-                vTaskDelay(30);
-
-        UartSendTxMessage(&huart6, (uint8_t *)(&BOARD_TX_DATA), sizeof(BOARD_TX_DATA), 100);
+        /* 注：原来这里每轮把 0x0302 帧往 huart1 和 huart6 各发一遍（两套独立 seq、
+         * 同一 cmd_id），与 custom_controller_task 里 30Hz 的上行重复。
+         * 上行现已收敛为 custom_terminal.c 的 CustomControllerSendToPC 单出口，
+         * 本任务只保留收遥控与下行解析。 */
 
         DataUnpack();
 

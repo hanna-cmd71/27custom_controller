@@ -23,7 +23,6 @@
 #include "cmsis_os.h"
 #include "gimbal_yaw_pitch_direct.h"
 #include "usb_debug.h"
-#include "controler_myself.h"
 #ifndef GIMBAL_TASK_INIT_TIME
 #define GIMBAL_TASK_INIT_TIME 200
 #endif  // GIMBAL_TASK_INIT_TIME

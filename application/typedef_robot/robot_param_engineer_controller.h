@@ -8,7 +8,11 @@
 #include "motor.h"
 #include "robot_typedef.h"
 
-#define CUSTOM_CONTROLLER_TYPE CUSTOM_CONTROLLER_ENGINEER  // 选择自定义控制器类型
+/* 注意：工程自定义控制器变体（原 CUSTOM_CONTROLLER_ENGINEER）已从工程中移除，
+ * 全仓只保留 CUSTOM_CONTROLLER_TERMINAL。此板若要继续当自定义控制器用，
+ * 应改用 robot_param_omni_mini.h 那套（CUSTOM_CONTROLLER_TYPE = CUSTOM_CONTROLLER_TERMINAL）。
+ * 这里暂时置 NONE，避免引用已删除的宏。 */
+#define CUSTOM_CONTROLLER_TYPE CUSTOM_CONTROLLER_NONE  // 选择自定义控制器类型
 
 // 机器人物理参数
 /*-------------------- Custom Controller --------------------*/

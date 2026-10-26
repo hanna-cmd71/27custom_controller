@@ -186,7 +186,6 @@
             <RvdsVP>2</RvdsVP>
             <RvdsMve>0</RvdsMve>
             <RvdsCdeCp>0</RvdsCdeCp>
-            <nBranchProt>0</nBranchProt>
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -356,7 +355,7 @@
             <ClangAsOpt>1</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,__FPU_USED=1U,__FPU_PRESENT=1U,__CC_ARM,ARM_MATH_MATRIX_CHECK,ARM_MATH_ROUNDING</Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
             </VariousControls>
@@ -530,9 +529,14 @@
               <FilePath>../application/robot_cmd/PWM_cmd_servo.c</FilePath>
             </File>
             <File>
-              <FileName>CAN_cmd_SBzdatou.c</FileName>
+              <FileName>CAN_cmd_zdatou.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../application/robot_cmd/CAN_cmd_SBzdatou.c</FilePath>
+              <FilePath>../application/robot_cmd/CAN_cmd_zdatou.c</FilePath>
+            </File>
+            <File>
+              <FileName>CAN_cmd_robostride.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../application/robot_cmd/CAN_cmd_robostride.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -745,24 +749,29 @@
           <GroupName>applications/custom_controller</GroupName>
           <Files>
             <File>
-              <FileName>custom_controller.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../application/custom_controller/custom_controller.c</FilePath>
-            </File>
-            <File>
               <FileName>custom_controller_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>../application/custom_controller/custom_controller_task.c</FilePath>
             </File>
             <File>
-              <FileName>custom_controller_engineer.c</FileName>
+              <FileName>custom_terminal.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../application/custom_controller/custom_controller_engineer.c</FilePath>
+              <FilePath>../application/custom_controller/custom_terminal.c</FilePath>
             </File>
             <File>
-              <FileName>custom_controller_connect.c</FileName>
+              <FileName>terminal_debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../application/custom_controller/custom_controller_connect.c</FilePath>
+              <FilePath>../application/custom_controller/terminal_debug.c</FilePath>
+            </File>
+            <File>
+              <FileName>terminal_kinematics.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../application/custom_controller/terminal_kinematics.c</FilePath>
+            </File>
+            <File>
+              <FileName>terminal_gravity.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../application/custom_controller/terminal_gravity.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -911,7 +920,7 @@
           <Files>
             <File>
               <FileName>AHRS.lib</FileName>
-              <FileType>5</FileType>
+              <FileType>4</FileType>
               <FilePath>../components/algorithm/AHRS.lib</FilePath>
             </File>
             <File>
@@ -921,7 +930,7 @@
             </File>
             <File>
               <FileName>arm_cortexM4lf_math.lib</FileName>
-              <FileType>5</FileType>
+              <FileType>4</FileType>
               <FilePath>../components/algorithm/arm_cortexM4lf_math.lib</FilePath>
             </File>
             <File>

@@ -21,9 +21,7 @@
 
 #include "attribute_typedef.h"
 #include "cmsis_os.h"
-#include "custom_controller.h"
-#include "custom_controller_connect.h"
-#include "custom_controller_engineer.h"
+#include "custom_terminal.h"
 
 #if INCLUDE_uxTaskGetStackHighWaterMark
 uint32_t custom_controller_high_water;
@@ -39,6 +37,7 @@ __weak void CustomControllerObserver(void);
 __weak void CustomControllerReference(void);
 __weak void CustomControllerConsole(void);
 __weak void CustomControllerSendCmd(void);
+__weak void CustomControllerSendToPC(void);
 
 /**
  * @brief          自定义控制器任务
@@ -66,9 +65,10 @@ void custom_controller_task(void const * pvParameters)
         // 发送控制量
         CustomControllerSendCmd();
 
-        // 发送数据至操作者电脑
-        if (xTaskGetTickCount() - lastTick > CUSTOM_CONTROLLER_SEND_TIME) {
-            SendDataToPC((uint8_t *)cc_control_data.pos);
+        // 注意：lastTick 必须在这里更新，否则条件恒真，会退化成每拍都发
+        if ((xTaskGetTickCount() - lastTick) >= CUSTOM_CONTROLLER_SEND_TIME) {
+            lastTick = xTaskGetTickCount();
+            CustomControllerSendToPC();
         }
 
         // 系统延时
@@ -127,6 +127,12 @@ __weak void CustomControllerSendCmd(void)
 {
     /* 
      NOTE : 在其他文件中定义具体内容
+    */
+}
+__weak void CustomControllerSendToPC(void)
+{
+    /* 
+     NOTE : 在其他文件中定义具体内容（自定义终端在 custom_terminal.c 里实现）
     */
 }
 /*------------------------------ End of File ------------------------------*/
