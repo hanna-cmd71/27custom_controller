@@ -314,6 +314,13 @@ static void DecodeExtIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t
         motor_id = ((RxCanInfoType_2_s *)(&rx_header->ExtId))->motor_id;
     }
 
+    /* motor_id 是帧里的 8 位字段，分桶数组只有 CYBERGEAR_NUM + 1 个元素。
+     * 不拦就写穿到后面的其它电机 Measure 结构体，故障现象会跑到不相干的电机上。 */
+    if (motor_id > CYBERGEAR_NUM)
+    {
+        return;
+    }
+
     if (CAN == &hcan1) // 接收到的数据是通过 CAN1 接收的
     {
         memcpy(&CAN1_CYBERGEAR_MEASURE[motor_id].ext_id, &rx_header->ExtId, 4);
@@ -355,13 +362,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(hcan_t *hcan)
 /**
  * @brief          获取DJI电机接收数据指针
  * @param[in]      can can口 (1 or 2)
- * @param[in]      i 电机接收数据索引,范围[0,11]
+ * @param[in]      i 电机接收数据索引,范围[0,10]
  * @return         DJI_Motor_Measure_Data
  * @note           如果输入值超出范围则返回CAN1_DJI_motor[1]
  */
 const DjiMotorMeasure_t *GetDjiMotorMeasurePoint(uint8_t can, uint8_t i)
 {
-    if (i < 12)
+    /* 数组只有 11 个元素，原来写 12 会让 i==11 越界取到相邻静态区 */
+    if (i < 11)
     {
         if (can == 1)
         {
