@@ -134,6 +134,8 @@ typedef struct
     uint32_t addr_extid[6];       // 每个地址最近一帧的完整扩展 ID
     uint8_t  addr_data[6][8];     // 每个地址最近一帧的原始数据
     uint8_t  ok_mask;             // bit i = 地址 i+1 最近一帧成功解析成位置
+    uint8_t  last_unknown_addr;   // 最近一帧"地址不在 1~6"的扩展帧地址（查 ID 没配对的电机）
+    uint32_t unknown_cnt;         // 地址不在 1~6 的扩展帧总数
 } zdatou_debug_t;
 
 extern volatile zdatou_debug_t zdatou_dbg;

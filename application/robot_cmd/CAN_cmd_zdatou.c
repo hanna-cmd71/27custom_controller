@@ -182,9 +182,12 @@ uint8_t zdatou_on_rx(uint8_t can, uint8_t addr, const uint8_t * rx_data, uint8_t
     zdatouMeasure_s * measure;
     uint8_t bucket;
 
-    /* 地址 0 或 7~255 不是本驱动的电机：这帧可能是别的设备，交回调用方 */
+    /* 地址 0 或 7~255 不是本驱动的电机：这帧可能是别的设备，交回调用方。
+     * 但要先把地址记下来：电机 ID 没设成 1~6 时，只有这条诊断能证明它在总线上。 */
     if ((addr == 0U) || (addr > 6U))
     {
+        zdatou_dbg.last_unknown_addr = addr;
+        zdatou_dbg.unknown_cnt++;
         return 0U;
     }
     bucket = (uint8_t)(addr - 1U);
@@ -208,8 +211,14 @@ uint8_t zdatou_on_rx(uint8_t can, uint8_t addr, const uint8_t * rx_data, uint8_t
 
     switch (rx_data[0])
     {
-    case ZDATOU_PARAM_CPOS: /* 31 <高> <低> 6B */
+    case ZDATOU_PARAM_CPOS: /* 31 <高> <低> [6B]，手册 5.5.7 的"5 字节"含地址字节 */
+        /* 实测地址 1/6 的回复 DLC=3（31 高 低，无尾字节），有的固件带 6B（DLC=4）。
+         * 两种都收，只有在尾字节存在时才校验，避免把正常帧误杀。 */
         if (dlc < 3U)
+        {
+            return 1U;
+        }
+        if ((dlc >= 4U) && (rx_data[dlc - 1U] != ZDATOU_CHECKSUM))
         {
             return 1U;
         }
@@ -217,9 +226,14 @@ uint8_t zdatou_on_rx(uint8_t can, uint8_t addr, const uint8_t * rx_data, uint8_t
         measure->pos_deg = ZDATOU_ECD_TO_01DEG(measure->ecd);
         break;
 
-    case ZDATOU_PARAM_RPOS: /* 36 <符号> <位置[4]> 6B */
+    case ZDATOU_PARAM_RPOS: /* 36 <符号> <位置[4]> [6B]，手册 5.5.13 的"8 字节"含地址字节 */
     {
+        /* 同上：6 字节（无尾字节）和 7 字节（带 6B）都收 */
         if (dlc < 6U)
+        {
+            return 1U;
+        }
+        if ((dlc >= 7U) && (rx_data[dlc - 1U] != ZDATOU_CHECKSUM))
         {
             return 1U;
         }
