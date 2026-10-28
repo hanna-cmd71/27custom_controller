@@ -14,6 +14,7 @@
 #include "terminal_gravity.h"
 #include "CAN_cmd_zdatou.h"
 #include "CAN_cmd_robostride.h"
+#include "bsp_can.h"
 #include "CRC8_CRC16.h"
 #include "usart.h"
 #include "cmsis_os.h"
@@ -149,10 +150,13 @@ void CustomControllerObserver(void)
 {
     static uint32_t last_stamp[CUSTOM_TERMINAL_JOINT_NUM];  // 上一帧的时间戳，用于统计新帧
     static uint32_t watch_dog;                             // 上报配置看门狗
+    static uint32_t rs_rearm_tick;                         // RS00 补发使能的节拍
     const uint32_t now = HAL_GetTick();
 
-    /* 看门狗：定时上报命令是"发一次就一直有效"，万一开机那一下丢了（驱动器上电慢、
-     * 总线仲裁失败），这台电机就永远不会再主动上报。每秒把所有还没在上报的地址补发一次。
+    /* 看门狗：上报/使能命令都是"发一次就一直有效"，开机那一下丢了（驱动器上电慢、
+     * 总线仲裁失败），或者电机中途自己 reset / 报故障，就再也回不来。
+     * 判据必须用**帧龄**，不能用 ok_mask / motor_mask：那两个都是只置位、永不清零的
+     * 粘滞位，一旦回过帧就恒为 1，中途掉线的电机永远补不回来。
      */
     if ((now - watch_dog) >= CUSTOM_TERMINAL_REPORT_RETRY_MS)
     {
@@ -160,13 +164,56 @@ void CustomControllerObserver(void)
         for (uint8_t i = 0; i < CUSTOM_TERMINAL_JOINT_NUM; i++)
         {
             const uint8_t addr = ct_zd_addr[i];
+            const zdatouMeasure_s *zd_m;
+            uint32_t age;
 
-            if ((addr != 0U) && ((zdatou_dbg.ok_mask & (uint8_t)(1U << (addr - 1U))) == 0U))
+            if (addr == 0U)
+            {
+                continue;
+            }
+
+            zd_m = zdatou_get_measure(CUSTOM_TERMINAL_CAN, addr);
+            age = ((zd_m != NULL) && (zd_m->last_fdb_time != 0U))
+                      ? (now - zd_m->last_fdb_time)
+                      : 0xFFFFFFFFU;
+
+            if (age > CUSTOM_TERMINAL_REPORT_RETRY_MS)
             {
                 zdatou_set_report(CUSTOM_TERMINAL_CAN, ZDATOU_ADDR_TO_EXT_ID(addr),
                                   CUSTOM_TERMINAL_ZD_REPORT_PARAM);
                 terminal_dbg.read_cnt++;
             }
+        }
+    }
+
+    /* RS00 补发使能。使能命令是"发一次就一直有效"的，但 CAN_TIMEOUT 出厂为 0
+     * （不超时），所以只要漏掉一次，电机就永远停在"未使能"——未使能的电机不执行
+     * 也不回 MIT 控制帧，总线上一条它的帧都没有（std_cnt 恒 0、rs_age_ms 恒 0xFFFFFFFF）。
+     * 开机那一帧 enable 是随 MCU 启动立刻发的，常常比电机自检早，这一帧就是那个"漏掉的一次"。
+     * 判据用帧龄，电机正常回帧时这个分支不会进；只有确实没帧才补发 enable，
+     * 顺序是"先清故障再使能"（过欠压/过温后电机拒绝使能）。
+     */
+    if ((now - rs_rearm_tick) >= CUSTOM_TERMINAL_RS_REENABLE_MS)
+    {
+        const RobostrideMeasure_s *rs_mon =
+            robostride_get_measure(CUSTOM_TERMINAL_CAN, CUSTOM_TERMINAL_RS_ID);
+        const uint32_t rs_age = ((rs_mon != NULL) && (rs_mon->last_fdb_time != 0U))
+                                    ? (now - rs_mon->last_fdb_time)
+                                    : 0xFFFFFFFFU;
+
+        terminal_dbg.rs_age_ms = rs_age;
+
+        if (rs_age > CUSTOM_TERMINAL_RS_REENABLE_MS)
+        {
+            rs_rearm_tick = now;
+
+            if ((rs_mon != NULL) && (rs_mon->fault != 0U))
+            {
+                robostride_clear_fault(CUSTOM_TERMINAL_CAN, CUSTOM_TERMINAL_RS_ID);
+            }
+
+            robostride_enable(CUSTOM_TERMINAL_CAN, CUSTOM_TERMINAL_RS_ID);
+            terminal_dbg.rs_reenable_cnt++;
         }
     }
 

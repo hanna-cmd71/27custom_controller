@@ -64,20 +64,25 @@
 /* 定时上报的信息码：0x31 = 单圈编码器值(0~65535)，0x36 = 实时位置(0.1°, 带符号、可多圈)*/
 #define CUSTOM_TERMINAL_ZD_REPORT_PARAM  (0x31U)
 
-/* -------------------- 连杆参数（重力补偿用，全部待实测） --------------------
+/* -------------------- 连杆参数（重力补偿用） --------------------
  * LINK_MASS[i] = 关节 i 之后那一段连杆的质量 (kg)
- * LINK_COM[i]  = 该段质心在关节 i 坐标系下的位置 (mm)
- * 现值按 v1.2 工程的数据平移到 0 基索引，只作"能跑起来看方向对不对"的初值。
-*/
-#define CUSTOM_TERMINAL_LINK_MASS        {0.390f, 0.140f, 0.200f, 0.050f, 0.140f, 0.050f}
-#define CUSTOM_TERMINAL_LINK_COM         {{0.0f, 0.0f, 100.0f},   \
-                                          {130.0f, 0.0f, -28.0f}, \
-                                          {0.0f, 20.0f, 0.0f},    \
-                                          {0.0f, -8.0f, -46.0f},  \
-                                          {0.0f, 0.0f, 0.0f},     \
-                                          {-20.0f, 0.0f, 50.0f}}
+ * LINK_COM[i]  = 该段质心在「关节 i 的 DH 坐标系」下的位置 (mm)
+ * 注意：不是 URDF 的 Link_i 坐标系。两者差一个常量变换（见 doc/dh_from_urdf.md §4），
+ *       所以别把 URDF 的 inertial origin 直接抄进来。
+ * 数值来源 = E:\6axis\custom_controller\urdf\custom_controller.urdf 的 CAD 惯性参数，
+ *       是「按体积×密度算出来的」，不是称出来的；用之前先按 doc/dh_from_urdf.md §5 复核。
+ */
+#define CUSTOM_TERMINAL_LINK_MASS        {0.195203f, 0.103890f, 0.136535f, 0.085791f, 0.107672f, 0.026376f}
+#define CUSTOM_TERMINAL_LINK_COM         {{-0.4854f, -12.1582f, -60.2141f},  \
+                                          {-33.0643f, 0.2736f, -52.7060f},   \
+                                          {-0.8378f, 4.6719f, 21.9142f},     \
+                                          {-0.4521f, -7.1257f, 0.9729f},     \
+                                          {0.5549f, 19.6106f, -52.9501f},    \
+                                          {-0.1092f, -0.6219f, -124.9440f}}
 
-/* 重力补偿投入比例：0 = 关闭。标定时从 0.2 起逐级加到 1.0 */
+/* 重力补偿投入比例：0 = 关闭。
+ * 打开的前提是 DIR/GEAR/ZERO 已标完（重力力矩的符号依赖 DIR），
+ * 且 LINK_MASS/LINK_COM 已复核；打开时从 0.2 起逐级加到 1.0，每档都要看方向。 */
 #define CUSTOM_TERMINAL_GRAVITY_SCALE    (0.0f)
 
 #endif /* ROBOT_PARAM_TERMINAL_H */

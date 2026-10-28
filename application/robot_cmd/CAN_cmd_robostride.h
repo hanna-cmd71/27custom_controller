@@ -83,15 +83,20 @@ typedef struct
 
 /**
  * @brief 总线诊断：装车时先看 rx_cnt 与 last_std_id
- * @note  rx_cnt 不涨 = 电机压根没回帧（没使能，或主机 id 与 CAN_MASTER 不一致）；
- *        last_std_id 就是电机实际用的主机 id，对不上 ROBOSTRIDE_MASTER_ID 就改参数。
+ * @note  rx_cnt 不涨而 uid_cnt 在涨 = 电机在回，但回的是"应答指令2（64 位 MCU 唯一标识）"，
+ *        说明它只认了停止/改参数类指令，没进使能态；两个都不涨 = 一条帧都没收到。
+ *        应答指令1 的帧 ID **是主机 id**（出厂参数 0x200b = 0，不一定是 0x15），
+ *        所以不能拿主机 id 当门限，只按"模式类型=0 + Byte0 是否 1~6"区分两种应答。
  */
 typedef struct
 {
-    uint32_t rx_cnt;              // 已被本驱动认领的应答帧数
-    uint16_t last_std_id;         // 最近一帧标准帧 ID（应答帧里应等于主机 id）
+    uint32_t rx_any_cnt;          // 进过 robostride_on_rx 的帧数（门限之前），0 = 回调根本没被调用
+    uint32_t rx_cnt;              // 已被本驱动认领的状态应答帧数（应答指令1）
+    uint32_t uid_cnt;             // 应答指令2（64 位 UID）帧数，用于区分"没回"和"回了但不是状态帧"
+    uint16_t last_std_id;         // 最近一帧标准帧 ID（应答指令1 时等于电机实际的主机 id）
     uint8_t  last_motor_id;       // 最近一帧 Byte0 携带的电机 CAN_ID
     uint8_t  motor_mask;          // bit i = 电机 CAN_ID(i+1) 回过帧
+    uint32_t tx_cnt;              // 本驱动成功塞进邮箱的帧数（≈333/s）；不涨 = 连发都没发出去
 } robostride_debug_t;
 
 extern volatile robostride_debug_t robostride_dbg;

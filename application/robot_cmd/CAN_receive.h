@@ -69,6 +69,27 @@ typedef enum __LkMotorType{
 } LkMotorType_e;
 // clang-format on
 
+/**
+ * @brief 原始收帧诊断
+ * @note  不管协议、不管驱动认不认，先把最近一帧记下来。用来区分两种情况：
+ *        "总线上根本没有帧"（std_cnt/ext_unclaimed_cnt 都不涨）
+ *        "帧来了，但不是我们等的那一种"（计数器涨、id 对不上）。
+ *        全部 volatile，在 CAN 接收中断里写，Watch 里直接看。
+ */
+typedef struct
+{
+    volatile uint32_t cnt;                // 收到的帧总数（标准 + 扩展）
+    volatile uint32_t std_cnt;            // 标准帧总数
+    volatile uint32_t ext_unclaimed_cnt;  // 扩展帧里没被 ZDT 认领的帧数（CyberGear/RS 候选）
+    volatile uint32_t last_std_id;        // 最近一帧标准帧的 11 位 id
+    volatile uint32_t last_std_dlc;       // 最近一帧标准帧的 DLC
+    volatile uint32_t last_ext_unclaimed_id;  // 最近一帧"非 ZDT"扩展帧的 29 位 id
+    volatile uint8_t last_std_data[8];    // 最近一帧标准帧的数据区
+    volatile uint8_t last_ext_unclaimed_data[8];  // 最近一帧"非 ZDT"扩展帧的数据区
+} can_rx_dbg_t;
+
+extern volatile can_rx_dbg_t can_rx_dbg;
+
 extern const DjiMotorMeasure_t * GetDjiMotorMeasurePoint(uint8_t can, uint8_t i);
 
 extern CybergearModeState_e GetCybergearModeState(Motor_s * p_motor);

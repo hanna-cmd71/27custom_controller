@@ -19,7 +19,7 @@ static const float ct_link_com[CUSTOM_TERMINAL_JOINT_NUM][3] = CUSTOM_TERMINAL_L
 
 /*
  * 关节 j 的转轴方向（基座坐标系）：把 axis[j] 用 T0_{j-1} 旋转到基座系再归一化。
- * j=0 时上一个坐标系就是基座，直接用 axis[0]。
+ * j=0 时上一个坐标系就是基座，用 base_transform 的旋转部分。
  */
 static void LinkAxis(uint8_t j, float T[CUSTOM_TERMINAL_JOINT_NUM][4][4], float z[3])
 {
@@ -39,7 +39,8 @@ static void LinkAxis(uint8_t j, float T[CUSTOM_TERMINAL_JOINT_NUM][4][4], float 
     {
         for (uint8_t k = 0; k < 3; k++)
         {
-            z[k] = dh->axis[k] / norm;
+            z[k] = (base_transform[k][0] * dh->axis[0] + base_transform[k][1] * dh->axis[1] +
+                    base_transform[k][2] * dh->axis[2]) / norm;
         }
         return;
     }
@@ -52,7 +53,11 @@ static void LinkAxis(uint8_t j, float T[CUSTOM_TERMINAL_JOINT_NUM][4][4], float 
 }
 
 /**
- * @brief 重力补偿：算出各关节需要抵消重力所需的前馈力矩 (N·m)
+ * @brief 重力补偿：算出各关节"抵消重力"所需的前馈力矩 (N·m)
+ * @note  输出是**要下发给电机的力矩**，符号已经取反：电机力矩 = −重力力矩。
+ *        前提是 JOINT_DIR 已经把"正力矩 → 绕 DH z 轴正向转"定下来（见 S2 标定），
+ *        所以必须在 DIR/GEAR/ZERO 标完之后才允许把 GRAVITY_SCALE 放到非 0。
+ * @note  量纲：坐标 mm、力 N，tau 累加出来是 N·mm，末尾 /1000 变成 N·m。
  */
 void terminal_gravity(const float q[CUSTOM_TERMINAL_JOINT_NUM],
                       float tau_nm[CUSTOM_TERMINAL_JOINT_NUM])
@@ -92,8 +97,9 @@ void terminal_gravity(const float q[CUSTOM_TERMINAL_JOINT_NUM],
 
         LinkAxis(j, T, z);
 
-        /* 关节轴上的一点：T0_{j-1} 的原点（j=0 时即基座原点） */
-        float p[3] = {0.0f, 0.0f, 0.0f};
+        /* 关节轴上的一点：T0_{j-1} 的原点；j=0 时是基座原点在基座系里的位置，
+         * 也就是 base_transform 的平移（J1 轴过 (0.4, 0, 64) mm，不是 (0,0,0)） */
+        float p[3] = {base_transform[0][3], base_transform[1][3], base_transform[2][3]};
 
         if (j > 0U)
         {
@@ -106,10 +112,12 @@ void terminal_gravity(const float q[CUSTOM_TERMINAL_JOINT_NUM],
 
         for (uint8_t i = j; i < CUSTOM_TERMINAL_JOINT_NUM; i++)
         {
-            /* 该连杆重力 F = (0, 0, -m*g)，g 用 mm/s² 保持与 .a/.d 一致 */
+            /* 该连杆重力 F = (0, 0, -m*g)，单位 N；力臂 r 用 mm，
+             * 于是 tau 的量纲是 N·mm，最后 /1000 得到 N·m。
+             * （这里原来写的是 -m*GRAVITY*1000，把力换成了 mN，导致结果大 1000 倍） */
             const float fx = 0.0f;
             const float fy = 0.0f;
-            const float fz = -ct_link_mass[i] * GRAVITY * 1000.0f;
+            const float fz = -ct_link_mass[i] * GRAVITY;
 
             /* 力臂 r = pc[i] - p[j] */
             const float rx = pc[i][0] - p[0];
@@ -124,7 +132,7 @@ void terminal_gravity(const float q[CUSTOM_TERMINAL_JOINT_NUM],
             tau += mx * z[0] + my * z[1] + mz * z[2];
         }
 
-        tau_nm[j] = tau / 1000.0f; /* N·mm → N·m */
+        tau_nm[j] = -tau / 1000.0f; /* N·mm → N·m，并取反成"电机要出的力矩" */
     }
 }
 

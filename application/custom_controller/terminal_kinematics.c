@@ -15,27 +15,42 @@
 /**
  * @brief 基座安装变换矩阵：机械臂基座相对世界坐标系的姿态
  * @note  正解从这里起乘。默认单位阵；基座歪装时改这一张表即可，其余不用动。
+ * @note  这里的数值不是"基座歪装"，而是 DH 起点 frame0 相对 URDF base_link 的平移：
+ *        frame0 的原点取在 J1 轴线上（URDF 里 J1 原点 = (0.40233, 0, 64) mm），
+ *        所以整条链的 x 偏 0.402 mm、z 偏 64 mm。数值单位是 **mm**，与 .a/.d 一致。
+ *        别照抄 URDF 里的米制数（0.064 就是 0.064 mm，差 1000 倍）。见 doc/dh_from_urdf.md。
  */
 float base_transform[4][4] = {
-    {1.0f, 0.0f, 0.0f, 0.0f},
+    {1.0f, 0.0f, 0.0f, 0.4023300f},
     {0.0f, 1.0f, 0.0f, 0.0f},
-    {0.0f, 0.0f, 1.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f, 64.0000000f},
     {0.0f, 0.0f, 0.0f, 1.0f},
 };
 
 /**
  * @brief 六轴机构 DH 参数表 (索引 0~5 对应 J0~J5)
- * @note  .a/.d 单位 mm，.alpha 单位 rad，.axis 为本关节转轴（本关节坐标系下）
- * @note  这是"机构"本身，标定后应换成实测值；当前 a 为连杆长度、alpha/d 待实测，
- *        在未换成真实 DH 之前，正解只是近似，不能用于逆解或高精度位姿。
+ * @note  .a/.d 单位 mm，.alpha/.offset 单位 rad，.axis 为本关节转轴（本关节坐标系下）
+ * @note  数值来源：E:\6axis\custom_controller\urdf\custom_controller.urdf（SolidWorks 导出）
+ *        由 _check\urdf_dh.py 用"Z_i 与 Z_{i+1} 的公垂线"推出来，再与 URDF 正解对拍：
+ *        300 组随机位姿下末端位置差 < 0.002 mm。推导过程见 doc/dh_from_urdf.md。
+ * @note  alpha 统一 90°、axis 统一 (0,0,1)，转角的信息全部放在 .offset 里：
+ *        这样 terminal_dh_transform 就退化成正统的 Rz(θ)Tz(d)Tx(a)Rx(α)。
+ * @note  J0 的 offset = -π 是因为 DH 的 x 轴按右手规则 X1 = Z1×Z2 落在 -x 方向，
+ *        与 URDF 的零位差半个圈；不是错误。
  */
 DH_Param_t arm_dh_param[CUSTOM_TERMINAL_JOINT_NUM] = {
-    /* J0 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .axis = {0.0f, 0.0f, 1.0f}},
-    /* J1 */ {.a = 190.0f, .d = 0.0f, .alpha = 0.0f, .axis = {0.0f, -1.0f, 0.0f}},
-    /* J2 */ {.a = 87.0f, .d = 0.0f, .alpha = 0.0f, .axis = {0.0f, 1.0f, 0.0f}},
-    /* J3 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .axis = {1.0f, 0.0f, 0.0f}},
-    /* J4 */ {.a = 150.5f, .d = 0.0f, .alpha = 0.0f, .axis = {0.0f, 0.0f, -1.0f}},
-    /* J5 */ {.a = 0.0f, .d = 0.0f, .alpha = 0.0f, .axis = {1.0f, 0.0f, 0.0f}},
+    /* J0 */ {.a = -0.8914f, .d = 47.0001f, .alpha = 1.570796f, .offset = -3.141593f,
+              .axis = {0.0f, 0.0f, 1.0f}},
+    /* J1 */ {.a = 99.9740f, .d = 0.0000f, .alpha = 0.000000f, .offset = 0.010012f,
+              .axis = {0.0f, 0.0f, 1.0f}},
+    /* J2 */ {.a = -0.8884f, .d = 14.1315f, .alpha = 1.570796f, .offset = -1.580804f,
+              .axis = {0.0f, 0.0f, 1.0f}},
+    /* J3 */ {.a = 0.3320f, .d = 95.6620f, .alpha = 1.570796f, .offset = 0.000000f,
+              .axis = {0.0f, 0.0f, 1.0f}},
+    /* J4 */ {.a = -1.0521f, .d = -5.2923f, .alpha = 1.570796f, .offset = 0.000000f,
+              .axis = {0.0f, 0.0f, 1.0f}},
+    /* J5 */ {.a = 0.0000f, .d = 0.0000f, .alpha = 0.000000f, .offset = 0.000000f,
+              .axis = {0.0f, 0.0f, 1.0f}},
 };
 
 /**
@@ -73,10 +88,12 @@ void terminal_mat4_mul(float left[4][4], float right[4][4], float out[4][4])
 
 /**
  * @brief 由单个关节的 DH 参数与关节角构造齐次变换矩阵
- * @note  T = R(axis, theta) * Rx(alpha) * Trans(a, 0, d)
+ * @note  T = R(axis, theta+offset) * Trans(a,0,d) * Rx(alpha)
+ * @note  axis = (0,0,1) 时即 Rz(θ+offset)*Tz(d)*Tx(a)*Rx(α)，与 MDH 的乘积形式一致
  */
 void terminal_dh_transform(const DH_Param_t *dh, float theta, float T[4][4])
 {
+    theta += dh->offset; /* DH 零位偏置：θ = q + offset */
     const float ct = cosf(theta);
     const float st = sinf(theta);
     const float ca = cosf(dh->alpha);

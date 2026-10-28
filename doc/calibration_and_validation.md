@@ -13,7 +13,7 @@
 | 1 | 力矩入口已有：`terminal_dbg.manual_en/manual_joint/manual_torque_nm` 驱动单关节（见 §7） | 直接做 S2~S5，无需再补代码 |
 | 2 | 反馈靠"定时上报"：开机给 5 台发一次 `11 18 0x31 00 0A 6B`，电机每 10 ms 主动发；每秒对没上报的地址自愈补发 | **S1 仍然第一个做**：先确认 `zdatou_dbg.ok_mask` 与 `fdb_cnt` 真的在动 |
 | 3 | 角度 = `wrap(dir·raw - ZERO) / GEAR`，`ZERO`/`DIR`/`GEAR` 全在 `robot_param_terminal.h`，默认值都是占位 | S2/S3/S4 每个关节都要实测填表 |
-| 4 | DH 表 `alpha` 与 `d` 仍全为 0，`DhTransform` 是 `Rj·T_fixed` | FK 只给相对位姿；**重力补偿前必须换成真 DH**（§10 前提 3） |
+| 4 | DH 表已按 URDF 推出来并落盘（`a/d/alpha/offset` 全部有值，`base_transform` 也补了），推导与复核见 `doc/dh_from_urdf.md`。**这是经典（distal）DH，不是 Craig 的 MDH**：`terminal_dh_transform` 的乘积是 `Rz·Tz·Tx·Rx`，表按它推（推导对拍 1e-15，落盘的四舍五入值 3.87e-3 mm）；MDH 是另一套乘积 + 另一张表，混用会错到米级，见 `dh_from_urdf.md` §1/§9 | FK 现在是真 6 轴正解；末端还要补 86.19 mm 的法兰偏置（§`dh_from_urdf.md` 3.3）。**`ZERO` 必须按 URDF 零位标**（大臂/小臂水平、肘部折满） |
 | 5 | 上行 30 Hz 走 huart1(4pin)+huart6(3pin)（DMA），`pos[0..5]` = 关节角(rad)，`pos[6]` = 0xA7 占位 | 上位机解析要跳过 `pos[6]` |
 | 6 | CAN1/CAN2 = 1 Mbps；ZDT 用扩展帧 `(Addr<<8)\|Packet`；RS00 用标准帧、电机 id = `CUSTOM_TERMINAL_RS_ID`；诊断在 `zdatou_dbg`/`robostride_dbg` | 没 CAN 分析仪也能靠 §8 的表定位 |
 
@@ -61,53 +61,82 @@
 
 ---
 
-### S2 关节 ↔ 电机映射与符号
+### S2 关节 ↔ 电机映射与符号（`JOINT_DIR`）
 
-**操作**：逐个关节，手转"该关节定义的 + 方向"约 30°，记录 `pos[i]` 是增大还是减小。
+**不需要上力矩**：失能状态下手转就行（比给力矩安全得多）。
 
-| 关节 | 驱动 | 通道 |
-|---|---|---|
-| J1 | zdatou | 扩展帧 `0x100` |
-| J2 | **robostride** | 标准帧 `0x15`（应答里 `rx_data[0]` = 电机 id，当前写死 5） |
-| J3 | zdatou | 扩展帧 `0x300` |
-| J4 | zdatou | 扩展帧 `0x400` |
-| J5 | zdatou | 扩展帧 `0x500` |
-| J6 | zdatou | 扩展帧 `0x600` |
+**操作**：逐个关节，手转"该关节的 + 方向"约 30°，看 `terminal_dbg.joint_fb[i]` 是变大还是变小。
+"+ 方向"= 绕 base 系下该关节转轴、按右手定则。零位姿态下手转时末端（法兰）会往下表方向走，
+这就是最快判断"我转的是不是 + 方向"的办法：
 
-**判据**：6 个关节的符号与结构图纸/URDF 一致。
+| 关节 | 数组下标 | 驱动 | `+q` 时末端往哪走（URDF 零位） |
+|---|---|---|---|
+| J1 | 0 | zdatou `0x100` | 向 +y 平移（俯视逆时针） |
+| J2 | 1 | **robostride `0x15`** | 向下 |
+| J3 | 2 | zdatou `0x300` | 向下（小臂往下折） |
+| J4 | 3 | zdatou `0x400` | 绕大臂自身轴自转（末端只走 5 mm，看臂上的标记） |
+| J5 | 4 | zdatou `0x500` | 向上 |
+| J6 | 5 | zdatou `0x600` | 绕法兰轴自转（末端不动，看法兰盘标记） |
 
-**失败处置**：改 `joint_direction[]`（当前 `{1,1,1,1,1,1}`，在 `CustomControllerInit` 里 memcpy 进去）。注意现在这个数组只是被存下来，**没有任何地方用它**——要么在 `joint_feedback` 计算里乘上它，要么把符号并进 `theta_offset` 的写法里，二选一。
+**判据**：按上表方向转，`joint_fb[i]` 应**增大**。
 
----
-
-### S3 减速比与量程
-
-**操作**：关节输出端手转 **360°**（用角度尺量准），数电机端编码器转了几圈 `n`。
-
-**判据**：手转 10° → `pos[i]` 变化 10°（按输出端计）。
-
-**失败处置**：现在代码里 `joint_feedback[i] = WrapAngle(ecd/65535*2π − offset)`，**既没有除减速比，也没有多圈计数**。
-- 若电机端直接连关节（比 1:1）：现在可用。
-- 若中间有减速器：必须改成 `pos = (ecd_angle + 2π·round) / ratio`，并加多圈计数（参考 `custom_controller_engineer.c` 里 `fdb.joint[i].round += (dpos<0)?1:-1` 的写法；该文件已删除，可从 git 历史 `74d4bcb` 取回）。
+**失败处置**：`CUSTOM_TERMINAL_JOINT_DIR[i]` 取 `-1`（`robot_param_terminal.h:43`）。
+`DIR` 必须与 URDF 的关节正方向一致，因为 `arm_dh_param[].offset` 是按 URDF 正方向推的：
+填反了正解会把机构镜像，重力补偿会**反向加速**。
 
 ---
 
-### S4 零位标定（`theta_offset`）
+### S3 减速比（`JOINT_GEAR`）
 
-**操作**：把关节摆到机械零位（图纸定义的零位），读出此刻**未减 offset 的原始角度** `f0 = ecd/65535·2π`（或直接读此时的旧 `pos[i] + 旧 offset`）。
-
-**计算**：因为 `pos = WrapAngle(ecd_angle − offset)`，要让零位处 `pos = 0`，则
+代码里 `angle = (dir·raw − ZERO) / GEAR`，`raw` 是电机侧机械角（rad），所以
 
 ```
-theta_offset[i] = f0
+GEAR = 电机转过的角度 / 关节转过的角度      （直驱 = 1）
+```
+
+**前置（关键）**：把 `CUSTOM_TERMINAL_ZD_REPORT_PARAM`（`robot_param_terminal.h:65`）从
+`0x31` 改成 `0x36`，重烧。
+
+- `0x31` = 单圈编码器值（0~360° 回绕）。只要 `GEAR > 1`，关节转过 `2π/GEAR` 就回绕一次，
+  `joint_fb` 会跳 360°，**根本没法标**。
+- `0x36` = 实时位置（带符号 32 位、0.1°、可多圈），driver 已支持（`zdatou_dbg.addr_func[i]` 会变 `0x36`）。
+
+**操作**：在关节输出端贴标记，手转一个整数圈（量程不够就 180°），角度尺量 Δq，读 `joint_raw[i]` 的变化 Δraw：
+
+```
+GEAR[i] = Δraw / Δq
+```
+
+`joint_raw` 已经乘过 `DIR`，所以 **DIR 必须先定**。
+
+**判据**：填完 GEAR 后手转 10°，`joint_fb[i]` 变化 10°（±0.5°）；转 90° 得 1.571 ± 0.005。
+
+**常见值**：直驱 1；带行星/谐波减速器就是减速比本身（查电机铭牌，别猜）。
+
+---
+
+### S4 零位（`JOINT_ZERO`）
+
+**操作**：把六个关节一起摆到 **URDF 零位**（见本节末尾），然后走 §9 的 `zero_capture` 流程，
+把 `zero_readback[i]` 填进 `CUSTOM_TERMINAL_JOINT_ZERO`（`robot_param_terminal.h:40`）。
+
+**计算**：`angle = (dir·raw − ZERO) / GEAR`，要让零位处 `angle = 0`，则
+
+```
+JOINT_ZERO[i] = joint_raw[i]（零位处读到的、已乘过 DIR 的原始角）
 ```
 
 **判据**：
-- 零位处 `pos[i] = 0.000 ± 0.002 rad`
-- 转到 +90° 处 `pos[i] = 1.571 ± 0.005 rad`
+- 零位处 `joint_fb[i] = 0.000 ± 0.002 rad`
+- 转到 J3 = +90° 处 `joint_fb[2] = 1.571 ± 0.005 rad`
 - 六个关节全部满足
 
 **注意**：写进 `arm_dh_param[]` 的 offset 必须是 `M_PI`、`-M_PI_2`、`-0.62f` 这种**有物理含义的值**，不要留 `-3.14` 这种截断。`-3.14` 与 `-M_PI` 差 0.0016 rad ≈ 0.09°，在 300 mm 臂展上是 0.5 mm 的末端误差，会污染后面的 FK 判据。
+
+**零位摆在哪**：`arm_dh_param[].offset` 是把"关节零位"钉在 **URDF/CAD 装配零位**上的（见
+`doc/dh_from_urdf.md` §6），所以这里必须把臂摆成那个姿态——**整条臂水平躺平、肘部折满**
+（大臂沿 -x 水平约 100 mm，小臂沿 +x 折回，所有质心高度 z ≈ 112 mm）。摆错姿态等于给六个
+`offset` 各加一个未知量，正解和重力补偿会一起系统性偏。
 
 ---
 
@@ -136,9 +165,9 @@ theta_offset[i] = f0
 
 | 步骤 | 操作 | 判据 |
 |---|---|---|
-| S6.1 | 卡尺量轴线间距，与 `arm_dh_param[].a`（190 / 87 / 150.5 mm）对比 | 误差 < 2 mm，否则改表 |
+| S6.1 | DH 已由 URDF 推出（不再手量）：按 `doc/dh_from_urdf.md` §8 抽查 2~3 个长度（J1→J2 竖直 47.00 mm、J2/J3 轴间距 99.97 mm） | 误差 < 0.5 mm，否则按实测改 `.a/.d` |
 | S6.2 | 取 5 个不同姿态：角度尺读 6 个关节角 | 与上位机 `pos[]` 偏差 < 0.5° |
-| S6.3 | 同姿态下卷尺量末端坐标，对比 `custom_terminal_fk.x/y/z` | 位置误差 < 5 mm |
+| S6.3 | 同姿态下卷尺量末端坐标，对比 DH 正解（零位姿态的期望值见 `doc/dh_from_urdf.md` §6 的表） | 位置误差 < 5 mm |
 
 **失败处置**
 - 误差随姿态系统性变化（有固定偏移）→ 改 `a` / `d`
@@ -172,6 +201,11 @@ theta_offset[i] = f0
 
 **落盘位置**：全部写进 `application/typedef_robot/robot_param_terminal.h`（`CUSTOM_TERMINAL_JOINT_DIR/GEAR/ZERO/MA_PER_NM`），`custom_terminal.c` 里不再出现机械数字。
 
+**命名提醒**：本表的 `J0~J5` 是**数组下标**（= 上位机 `pos[0..5]`、Watch 里 `joint_fb[0..5]`、
+`manual_joint` 写 0~5）；`J0` 对应 URDF 的 `Joint1`、`J1` 对应 `Joint2`。`ZERO` 是"关节角 = 0"
+那一刻的电机侧机械角，而"关节角 = 0"的物理姿态由 `arm_dh_param[].offset` 钉在 URDF 零位上
+（见 §S4 与 `doc/dh_from_urdf.md` §6）——两者都在往"零位"上使劲，别只标其中一个。
+
 ---
 
 ## 4. 安全红线
@@ -196,7 +230,10 @@ theta_offset[i] = f0
 
 仍待补：
 
-1. **真 DH 表**——`alpha` 与 `d` 现在仍是 0，`DhTransform` 是 `Rj·T_fixed`。接重力补偿前必须换成真 DH，否则 `z[j]`（旋转轴）算错，补偿方向就是错的。
+1. ~~**真 DH 表**——`alpha` 与 `d` 现在仍是 0，`DhTransform` 是 `Rj·T_fixed`。接重力补偿前必须换成真 DH，否则 `z[j]`（旋转轴）算错，补偿方向就是错的。~~
+   **已完成**：`arm_dh_param[]` 已换成 URDF 推出的 6 行（`a/d/alpha/offset` 全有值），`base_transform`
+   补了 frame0 的平移，`DH_Param_t` 加了 `.offset`；质量/质心也换到了 DH 系。推导、对拍数字、
+   零位姿态见 `doc/dh_from_urdf.md`。
 2. **软限位**——现在没有关节限位，只有力矩上限。做联动前要加。
 3. **急停**——遥控输入已删，目前只能靠断电。
 
@@ -205,7 +242,7 @@ theta_offset[i] = f0
 ## 6. 数据从哪看（没有上位机时的退路）
 
 - **上位机侧**：`pos[0..5]` 就是关节角（rad），够做 S1~S4。
-- **Keil Watch 侧**：这是现在主要的观察手段，都在 `custom_terminal.h` 里声明为 volatile 全局，能直接求值：
+- **Keil Watch 侧**：这是现在主要的观察手段，都在 `terminal_debug.h` 里声明为 volatile 全局（实现在 `terminal_debug.c`），能直接求值：
   - `terminal_dbg`：`joint_fb[6]`/`joint_raw[6]`/`joint_ecd[6]`/`torque_cmd[6]`/`tau_g[6]`/`fdb_cnt`/`armed`/`test_joint`
   - `zdatou_dbg`：`rx_cnt`/`ok_mask`/`addr_cnt[6]`/`addr_func[6]`/`addr_dlc[6]`/`addr_extid[6]`/`addr_data[6][8]`
   - `robostride_dbg`：`rx_cnt`/`last_std_id`/`last_motor_id`/`motor_mask`
@@ -325,9 +362,10 @@ Watch 窗口加 `terminal_dbg`（或直接用绝对地址表达式，见 §6）�
 
 前提（缺一不可）：
 
-1. §9 零位已标定——`tau_g` 直接吃 `joint_feedback`，零位错则补偿方向错。
+1. §9 零位已标定——`tau_g` 直接吃 `joint_feedback`，零位错则补偿方向错；而且零位必须摆成 URDF 零位（§S4）。
 2. `JOINT_GEAR` 已标定——减速比错，重力矩会按比例错。
-3. DH 表的 `a/d/alpha` 是**当前这把臂**的量出来（v1.2 的 130/115/42 mm 是旧机构的值，只在"能跑起来看方向"时当占位）。
-4. `LINK_MASS`/`LINK_COM` 至少按实测重量更新一次，否则只是"看起来有补偿"。
+3. DH 表的 `a/d/alpha/offset` 是**当前这把臂**的——已完成，由 URDF 推出（`doc/dh_from_urdf.md`），只剩按 §8 抽查两三个长度确认 CAD 与实物一致。
+4. `LINK_MASS`/`LINK_COM` 已按 URDF 的 CAD 惯性参数填入；称一下总重（应约 0.655 kg），差 20% 以上要按实测改，否则只是"看起来有补偿"。
+5. `tau_g` 输出**已经取反**（`terminal_gravity.c` 里 `tau_nm = -tau/1000`），即"电机要出的力矩"；如果 G2 一开就往低处跑，先查 `JOINT_DIR` 的符号，别急着改质量。
 
 `terminal_dbg.gravity_en` 与手动模式互斥：`armed` 为真时重力补偿不叠加（手动模式优先）。

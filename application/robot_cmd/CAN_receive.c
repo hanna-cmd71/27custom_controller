@@ -49,6 +49,9 @@ static DmMeasure_s CAN2_DM_MEASURE[DM_NUM];
 static LkMeasure_s CAN1_LK_MEASURE[LK_NUM];
 static LkMeasure_s CAN2_LK_MEASURE[LK_NUM];
 
+/* 原始收帧诊断（见 CAN_receive.h 的说明） */
+volatile can_rx_dbg_t can_rx_dbg;
+
 static SupCap_s SUP_CAP_MEASURE;
 
 static ChassisReference_t BOARD_COMMUNICATION_MEASURE;
@@ -309,6 +312,14 @@ static void DecodeExtIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t
         return;
     }
 
+    /* 走到这里说明这帧不是 ZDT 的：记下来，用来判断 RS00 是不是在用扩展帧 */
+    can_rx_dbg.ext_unclaimed_cnt++;
+    can_rx_dbg.last_ext_unclaimed_id = rx_header->ExtId;
+    for (uint8_t i = 0U; i < 8U; i++)
+    {
+        can_rx_dbg.last_ext_unclaimed_data[i] = rx_data[i];
+    }
+
     if (((RxCanInfo_s *)(&rx_header->ExtId))->communication_type == 2)
     { // 通信类型2
         motor_id = ((RxCanInfoType_2_s *)(&rx_header->ExtId))->motor_id;
@@ -325,11 +336,13 @@ static void DecodeExtIdData(hcan_t *CAN, CAN_RxHeaderTypeDef *rx_header, uint8_t
     {
         memcpy(&CAN1_CYBERGEAR_MEASURE[motor_id].ext_id, &rx_header->ExtId, 4);
         memcpy(CAN1_CYBERGEAR_MEASURE[motor_id].rx_data, rx_data, 8);
+        CAN1_CYBERGEAR_MEASURE[motor_id].last_fdb_time = HAL_GetTick();
     }
     else if (CAN == &hcan2) // 接收到的数据是通过 CAN2 接收的
     {
         memcpy(&CAN2_CYBERGEAR_MEASURE[motor_id].ext_id, &rx_header->ExtId, 4);
         memcpy(CAN2_CYBERGEAR_MEASURE[motor_id].rx_data, rx_data, 8);
+        CAN2_CYBERGEAR_MEASURE[motor_id].last_fdb_time = HAL_GetTick();
     }
 }
 
@@ -347,8 +360,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(hcan_t *hcan)
 
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data);
 
+    can_rx_dbg.cnt++;
+
     if (rx_header.IDE == CAN_ID_STD) // 接收到的数据标识符为StdId
     {
+        can_rx_dbg.std_cnt++;
+        can_rx_dbg.last_std_id = rx_header.StdId;
+        can_rx_dbg.last_std_dlc = rx_header.DLC;
+        for (uint8_t i = 0U; i < 8U; i++)
+        {
+            can_rx_dbg.last_std_data[i] = rx_data[i];
+        }
         DecodeStdIdData(hcan, &rx_header, rx_data);
     }
     else if (rx_header.IDE == CAN_ID_EXT) // 接收到的数据标识符为ExtId
