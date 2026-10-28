@@ -27,9 +27,6 @@ CCControlData_t cc_control_data = {
     .pos = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
 };
 
-/* 本工程只服务自定义终端这一种配置，已取消 CUSTOM_CONTROLLER_TYPE 变体分支：
- * 本文件无条件编译，其它配置不再有"空实现"这条退路。 */
-
 
 /* 每个关节的驱动地址：0 = 该关节不是 ZDT 电机（走 robostride） */
 static const uint8_t ct_zd_addr[CUSTOM_TERMINAL_JOINT_NUM] = CUSTOM_TERMINAL_ZD_ADDR;
@@ -46,10 +43,13 @@ static const float ct_ma_per_nm[CUSTOM_TERMINAL_JOINT_NUM] = CUSTOM_TERMINAL_JOI
 
 custom_terminal_t custom_terminal;
 FK_Result_t custom_terminal_fk;                     
-FK_Result_t joint_pose[CUSTOM_TERMINAL_JOINT_NUM];  // 每个关节坐标系相对基座的位姿
+FK_Result_t joint_pose[CUSTOM_TERMINAL_JOINT_NUM];  
 
 /* 发帧游标：每 1 ms 只发 2 帧，3 拍转完一圈，单台电机 3 ms 收一帧 */
 static uint8_t ct_send_phase;
+
+/* 本拍实际下发的力矩：已按关节反馈有效性门控，发帧只认这个数组 */
+static float ct_torque_out[CUSTOM_TERMINAL_JOINT_NUM];
 
 /*-------------------------------- Internal functions ---------------------------------------*/
 
@@ -105,8 +105,7 @@ void CustomControllerInit(void)
 {
     memset(&custom_terminal, 0, sizeof(custom_terminal));
 
-    /* 上电先发失能（手册 5.3.2，F3 AB 00 00 6B）。驱动器上电默认使能并锁轴，
-     * 只发 0 力矩帧是松不开的，必须显式发失能命令。 */
+    /* 上电先发失能（F3 AB 00 00 6B）。张大头驱动器上电默认使能并锁轴， */
     for (uint8_t i = 0; i < CUSTOM_TERMINAL_JOINT_NUM; i++)
     {
         if (ct_zd_addr[i] != 0U)
@@ -140,6 +139,7 @@ void CustomControllerInit(void)
  */
 void CustomControllerSetMode(void)
 {
+    //Todo：Mode Switch
 }
 
 /**
@@ -148,14 +148,15 @@ void CustomControllerSetMode(void)
 void CustomControllerObserver(void)
 {
     static uint32_t last_stamp[CUSTOM_TERMINAL_JOINT_NUM];  // 上一帧的时间戳，用于统计新帧
-    static uint32_t retry_tick;                             // 上报配置自愈计时
+    static uint32_t watch_dog;                             // 上报配置看门狗
     const uint32_t now = HAL_GetTick();
 
-    /* 自愈：定时上报命令是"发一次就一直有效"，万一开机那一下丢了（驱动器上电慢、
-     * 总线仲裁失败），这台电机就永远不会再主动上报。每秒挑一台还没在上报的补发一次。 */
-    if ((now - retry_tick) >= CUSTOM_TERMINAL_REPORT_RETRY_MS)
+    /* 看门狗：定时上报命令是"发一次就一直有效"，万一开机那一下丢了（驱动器上电慢、
+     * 总线仲裁失败），这台电机就永远不会再主动上报。每秒把所有还没在上报的地址补发一次。
+     */
+    if ((now - watch_dog) >= CUSTOM_TERMINAL_REPORT_RETRY_MS)
     {
-        retry_tick = now;
+        watch_dog = now;
         for (uint8_t i = 0; i < CUSTOM_TERMINAL_JOINT_NUM; i++)
         {
             const uint8_t addr = ct_zd_addr[i];
@@ -165,7 +166,6 @@ void CustomControllerObserver(void)
                 zdatou_set_report(CUSTOM_TERMINAL_CAN, ZDATOU_ADDR_TO_EXT_ID(addr),
                                   CUSTOM_TERMINAL_ZD_REPORT_PARAM);
                 terminal_dbg.read_cnt++;
-                break;
             }
         }
     }
@@ -177,20 +177,48 @@ void CustomControllerObserver(void)
 
         if (i == CUSTOM_TERMINAL_RS_JOINT)
         {
-            const RobostrideMeasure_s *rs =
+            const RobostrideMeasure_s *rs_motor =
                 robostride_get_measure(CUSTOM_TERMINAL_CAN, CUSTOM_TERMINAL_RS_ID);
 
-            raw = rs->pos;
-            stamp = rs->last_fdb_time;
+            /* 参数非法时 get_measure 返回 NULL，解引用会直接进 HardFault */
+            if (rs_motor == NULL)
+            {
+                custom_terminal.joint_feedback_valid[i] = 0U;
+                continue;
+            }
+
+            raw = rs_motor->pos;
+            stamp = rs_motor->last_fdb_time;
+
+            /* RS00 的应答帧: 速度/力矩/温度/状态 */
+            terminal_dbg.joint_vel_fb[i] = rs_motor->vel;
+            terminal_dbg.joint_tor_fb[i] = rs_motor->tor;
+            terminal_dbg.joint_tem[i] = rs_motor->temp;
+            terminal_dbg.joint_mode[i] = rs_motor->mode_state;
+            terminal_dbg.joint_fault[i] = rs_motor->fault;
         }
         else
         {
-            const zdatouMeasure_s *zd =
+            const zdatouMeasure_s *zd_motor =
                 zdatou_get_measure(CUSTOM_TERMINAL_CAN, ct_zd_addr[i]);
 
-            raw = (float)zd->pos_deg * ZDATOU_01DEG_TO_RAD;
-            stamp = zd->last_fdb_time;
-            custom_terminal.joint_last_ecd[i] = zd->ecd;
+            /* 同上：地址为 0或越界时返回 NULL */
+            if (zd_motor == NULL)
+            {
+                custom_terminal.joint_feedback_valid[i] = 0U;
+                continue;
+            }
+
+            raw = (float)zd_motor->pos_deg * ZDATOU_01DEG_TO_RAD;
+            stamp = zd_motor->last_fdb_time;
+            custom_terminal.joint_last_ecd[i] = zd_motor->ecd;
+
+            /* 0x31 只回位置，其余量置 0，避免 Watch 里留着上一次或别的关节的旧值 */
+            terminal_dbg.joint_vel_fb[i] = 0.0f;
+            terminal_dbg.joint_tor_fb[i] = 0.0f;
+            terminal_dbg.joint_tem[i] = 0.0f;
+            terminal_dbg.joint_fault[i] = 0U;
+            terminal_dbg.joint_mode[i] = zd_motor->kind;
         }
 
         /* 方向 → 零位 → 减速比；joint_raw 保留未扣零位的值，供零位标定回读 */
@@ -365,7 +393,7 @@ void CustomControllerConsole(void)
     terminal_dbg.test_joint = joint;
 #endif
 
-    /* 重力补偿：默认关闭，测试模式未武装时才生效（避免与手动力矩叠加） */
+    /* 重力补偿*/
     if ((terminal_dbg.gravity_en != 0U) && (terminal_dbg.armed == 0U))
     {
         for (uint8_t i = 0; i < CUSTOM_TERMINAL_JOINT_NUM; i++)
@@ -390,12 +418,13 @@ void CustomControllerConsole(void)
  */
 void CustomControllerSendCmd(void)
 {
+    /* 门控必须落到发帧源头上：之前这里只把 tau 写进 terminal_dbg 供 Watch 观察，
+     * 下面三处发帧用的仍是未门控的 joint_torque[]，"没有反馈就不出力"从未生效。 */
     for (uint8_t i = 0; i < CUSTOM_TERMINAL_JOINT_NUM; i++)
     {
-        float tau = custom_terminal.joint_feedback_valid[i] ? custom_terminal.joint_torque[i]
-                                                            : 0.0f;
-
-        terminal_dbg.torque_cmd[i] = tau;
+        ct_torque_out[i] = custom_terminal.joint_feedback_valid[i] ? custom_terminal.joint_torque[i]
+                                                                  : 0.0f;
+        terminal_dbg.torque_cmd[i] = ct_torque_out[i];
     }
 
     switch (ct_send_phase)
@@ -403,11 +432,11 @@ void CustomControllerSendCmd(void)
     case 0:
         zdatou_torque_control_i32(
             CUSTOM_TERMINAL_CAN, ZDATOU_ADDR_TO_EXT_ID(ct_zd_addr[0]),
-            (int32_t)(clamp_torque(custom_terminal.joint_torque[0],
+            (int32_t)(clamp_torque(ct_torque_out[0],
                                    (float)CUSTOM_TERMINAL_ZD_TORQUE_MAX_MA / ct_ma_per_nm[0]) *
                       ct_ma_per_nm[0]));
         robostride_mit_control(CUSTOM_TERMINAL_CAN, CUSTOM_TERMINAL_RS_ID, 0.0f, 0.0f, 0.0f, 0.0f,
-                               clamp_torque(custom_terminal.joint_torque[1],
+                               clamp_torque(ct_torque_out[1],
                                             CUSTOM_TERMINAL_RS_TORQUE_MAX_NM));
         ct_send_phase = 1U;
         break;
@@ -417,7 +446,7 @@ void CustomControllerSendCmd(void)
         {
             zdatou_torque_control_i32(
                 CUSTOM_TERMINAL_CAN, ZDATOU_ADDR_TO_EXT_ID(ct_zd_addr[i]),
-                (int32_t)(clamp_torque(custom_terminal.joint_torque[i],
+                (int32_t)(clamp_torque(ct_torque_out[i],
                                        (float)CUSTOM_TERMINAL_ZD_TORQUE_MAX_MA / ct_ma_per_nm[i]) *
                           ct_ma_per_nm[i]));
         }
@@ -429,7 +458,7 @@ void CustomControllerSendCmd(void)
         {
             zdatou_torque_control_i32(
                 CUSTOM_TERMINAL_CAN, ZDATOU_ADDR_TO_EXT_ID(ct_zd_addr[i]),
-                (int32_t)(clamp_torque(custom_terminal.joint_torque[i],
+                (int32_t)(clamp_torque(ct_torque_out[i],
                                        (float)CUSTOM_TERMINAL_ZD_TORQUE_MAX_MA / ct_ma_per_nm[i]) *
                           ct_ma_per_nm[i]));
         }
